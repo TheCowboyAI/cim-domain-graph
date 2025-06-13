@@ -3,7 +3,7 @@
 //! A ConceptGraph represents a semantic network of domain concepts and their relationships,
 //! assembled from various domain objects to provide a unified view of the conceptual space.
 
-use cim_core_domain::{
+use cim_domain::{
     AggregateRoot,
     NodeId, EdgeId,
 };

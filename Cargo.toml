@@ -9,9 +9,12 @@ repository = "https://github.com/thecowboyai/cim-domain-graph"
 keywords = ["graph", "domain", "ddd", "event-sourcing", "cim", "composition"]
 categories = ["data-structures", "asynchronous"]
 
+[[bin]]
+name = "generate-domain-graph"
+path = "src/bin/generate_domain_graph.rs"
+
 [dependencies]
 # Core dependencies
-cim-core-domain = { path = "../cim-core-domain" }
 cim-domain = { path = "../cim-domain" }
 cim-infrastructure = { path = "../cim-infrastructure" }
 

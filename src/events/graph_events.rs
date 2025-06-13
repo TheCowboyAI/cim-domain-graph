@@ -6,7 +6,7 @@ use uuid::Uuid;
 use std::collections::HashMap;
 
 // Re-export identifiers that will be moved here eventually
-pub use cim_core_domain::{NodeId, EdgeId};
+pub use cim_domain::{NodeId, EdgeId};
 pub use cim_domain::GraphId;
 
 /// Graph created event

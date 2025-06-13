@@ -19,5 +19,5 @@ pub use events::*;
 pub use domain_events::*;
 
 // Re-export identifiers that will eventually move here
-pub use cim_core_domain::{NodeId, EdgeId};
+pub use cim_domain::{NodeId, EdgeId};
 pub use cim_domain::GraphId;
