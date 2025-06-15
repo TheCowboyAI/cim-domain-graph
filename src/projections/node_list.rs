@@ -225,7 +225,7 @@ impl super::GraphProjection for NodeListProjection {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::GraphProjection;
+    use crate::projections::GraphProjection;
 
     #[tokio::test]
     async fn test_node_list_projection() {

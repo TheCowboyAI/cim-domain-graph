@@ -169,7 +169,7 @@ impl super::GraphProjection for GraphSummaryProjection {
 mod tests {
     use super::*;
     use crate::NodeId;
-    use super::GraphProjection;
+    use crate::projections::GraphProjection;
 
     #[tokio::test]
     async fn test_graph_summary_projection() {
