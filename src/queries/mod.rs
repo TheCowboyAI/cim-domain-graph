@@ -208,52 +208,198 @@ pub trait GraphQueryHandler: Send + Sync {
 
 /// Implementation of graph query handler
 pub struct GraphQueryHandlerImpl {
-    // This would typically contain references to read models/projections
-    // For now, we'll provide a basic implementation
+    graph_summary_projection: crate::projections::GraphSummaryProjection,
+    node_list_projection: crate::projections::NodeListProjection,
 }
 
 impl GraphQueryHandlerImpl {
     /// Create a new graph query handler
     pub fn new() -> Self {
-        Self {}
+        Self {
+            graph_summary_projection: crate::projections::GraphSummaryProjection::new(),
+            node_list_projection: crate::projections::NodeListProjection::new(),
+        }
+    }
+
+    /// Create with existing projections
+    pub fn with_projections(
+        graph_summary_projection: crate::projections::GraphSummaryProjection,
+        node_list_projection: crate::projections::NodeListProjection,
+    ) -> Self {
+        Self {
+            graph_summary_projection,
+            node_list_projection,
+        }
     }
 }
 
 #[async_trait]
 impl GraphQueryHandler for GraphQueryHandlerImpl {
-    async fn get_graph(&self, _graph_id: GraphId) -> GraphQueryResult<GraphInfo> {
-        // TODO: Implement using graph summary projection
-        Err(GraphQueryError::DataAccessError("Not implemented yet".to_string()))
+    async fn get_graph(&self, graph_id: GraphId) -> GraphQueryResult<GraphInfo> {
+        match self.graph_summary_projection.get_summary(&graph_id) {
+            Some(summary) => Ok(GraphInfo {
+                graph_id: summary.graph_id,
+                name: summary.name.clone(),
+                description: summary.description.clone(),
+                node_count: summary.node_count,
+                edge_count: summary.edge_count,
+                created_at: summary.created_at,
+                last_modified: summary.last_modified,
+                metadata: summary.metadata.clone(),
+            }),
+            None => Err(GraphQueryError::GraphNotFound(graph_id)),
+        }
     }
     
-    async fn get_all_graphs(&self, _pagination: PaginationParams) -> GraphQueryResult<Vec<GraphInfo>> {
-        // TODO: Implement using graph summary projection
-        Ok(Vec::new())
+    async fn get_all_graphs(&self, pagination: PaginationParams) -> GraphQueryResult<Vec<GraphInfo>> {
+        let summaries = self.graph_summary_projection
+            .get_summaries_paginated(pagination.offset, pagination.limit);
+        
+        let graph_infos = summaries
+            .into_iter()
+            .map(|summary| GraphInfo {
+                graph_id: summary.graph_id,
+                name: summary.name.clone(),
+                description: summary.description.clone(),
+                node_count: summary.node_count,
+                edge_count: summary.edge_count,
+                created_at: summary.created_at,
+                last_modified: summary.last_modified,
+                metadata: summary.metadata.clone(),
+            })
+            .collect();
+        
+        Ok(graph_infos)
     }
     
-    async fn search_graphs(&self, _query: &str, _pagination: PaginationParams) -> GraphQueryResult<Vec<GraphInfo>> {
-        // TODO: Implement search functionality
-        Ok(Vec::new())
+    async fn search_graphs(&self, query: &str, pagination: PaginationParams) -> GraphQueryResult<Vec<GraphInfo>> {
+        let query_lower = query.to_lowercase();
+        let all_summaries = self.graph_summary_projection.get_all_summaries();
+        
+        let matching_summaries: Vec<_> = all_summaries
+            .into_iter()
+            .filter(|summary| {
+                summary.name.to_lowercase().contains(&query_lower) ||
+                summary.description.to_lowercase().contains(&query_lower)
+            })
+            .skip(pagination.offset)
+            .take(pagination.limit)
+            .collect();
+        
+        let graph_infos = matching_summaries
+            .into_iter()
+            .map(|summary| GraphInfo {
+                graph_id: summary.graph_id,
+                name: summary.name.clone(),
+                description: summary.description.clone(),
+                node_count: summary.node_count,
+                edge_count: summary.edge_count,
+                created_at: summary.created_at,
+                last_modified: summary.last_modified,
+                metadata: summary.metadata.clone(),
+            })
+            .collect();
+        
+        Ok(graph_infos)
     }
     
-    async fn filter_graphs(&self, _filter: FilterParams, _pagination: PaginationParams) -> GraphQueryResult<Vec<GraphInfo>> {
-        // TODO: Implement filtering functionality
-        Ok(Vec::new())
+    async fn filter_graphs(&self, filter: FilterParams, pagination: PaginationParams) -> GraphQueryResult<Vec<GraphInfo>> {
+        let all_summaries = self.graph_summary_projection.get_all_summaries();
+        
+        let filtered_summaries: Vec<_> = all_summaries
+            .into_iter()
+            .filter(|summary| {
+                // Filter by creation date range
+                if let Some(after) = filter.created_after {
+                    if summary.created_at < after {
+                        return false;
+                    }
+                }
+                
+                if let Some(before) = filter.created_before {
+                    if summary.created_at > before {
+                        return false;
+                    }
+                }
+                
+                // Filter by name contains
+                if let Some(name_filter) = &filter.name_contains {
+                    if !summary.name.to_lowercase().contains(&name_filter.to_lowercase()) {
+                        return false;
+                    }
+                }
+                
+                true
+            })
+            .skip(pagination.offset)
+            .take(pagination.limit)
+            .collect();
+        
+        let graph_infos = filtered_summaries
+            .into_iter()
+            .map(|summary| GraphInfo {
+                graph_id: summary.graph_id,
+                name: summary.name.clone(),
+                description: summary.description.clone(),
+                node_count: summary.node_count,
+                edge_count: summary.edge_count,
+                created_at: summary.created_at,
+                last_modified: summary.last_modified,
+                metadata: summary.metadata.clone(),
+            })
+            .collect();
+        
+        Ok(graph_infos)
     }
     
-    async fn get_node(&self, _node_id: NodeId) -> GraphQueryResult<NodeInfo> {
-        // TODO: Implement using node projection
-        Err(GraphQueryError::DataAccessError("Not implemented yet".to_string()))
+    async fn get_node(&self, node_id: NodeId) -> GraphQueryResult<NodeInfo> {
+        match self.node_list_projection.get_node(&node_id) {
+            Some(node_info) => Ok(NodeInfo {
+                node_id: node_info.node_id,
+                graph_id: node_info.graph_id,
+                node_type: node_info.node_type.clone(),
+                position_2d: None, // TODO: Add position tracking to projections
+                position_3d: None, // TODO: Add position tracking to projections
+                metadata: node_info.metadata.clone(),
+            }),
+            None => Err(GraphQueryError::NodeNotFound(node_id)),
+        }
     }
     
-    async fn get_nodes_in_graph(&self, _graph_id: GraphId) -> GraphQueryResult<Vec<NodeInfo>> {
-        // TODO: Implement using node list projection
-        Ok(Vec::new())
+    async fn get_nodes_in_graph(&self, graph_id: GraphId) -> GraphQueryResult<Vec<NodeInfo>> {
+        let node_infos = self.node_list_projection
+            .get_nodes_by_graph(&graph_id)
+            .into_iter()
+            .map(|node_info| NodeInfo {
+                node_id: node_info.node_id,
+                graph_id: node_info.graph_id,
+                node_type: node_info.node_type.clone(),
+                position_2d: None, // TODO: Add position tracking to projections
+                position_3d: None, // TODO: Add position tracking to projections
+                metadata: node_info.metadata.clone(),
+            })
+            .collect();
+        
+        Ok(node_infos)
     }
     
-    async fn get_nodes_by_type(&self, _graph_id: GraphId, _node_type: &str) -> GraphQueryResult<Vec<NodeInfo>> {
-        // TODO: Implement filtering by node type
-        Ok(Vec::new())
+    async fn get_nodes_by_type(&self, graph_id: GraphId, node_type: &str) -> GraphQueryResult<Vec<NodeInfo>> {
+        let all_typed_nodes = self.node_list_projection.get_nodes_by_type(node_type);
+        
+        let filtered_nodes: Vec<_> = all_typed_nodes
+            .into_iter()
+            .filter(|node_info| node_info.graph_id == graph_id)
+            .map(|node_info| NodeInfo {
+                node_id: node_info.node_id,
+                graph_id: node_info.graph_id,
+                node_type: node_info.node_type.clone(),
+                position_2d: None, // TODO: Add position tracking to projections
+                position_3d: None, // TODO: Add position tracking to projections
+                metadata: node_info.metadata.clone(),
+            })
+            .collect();
+        
+        Ok(filtered_nodes)
     }
     
     async fn find_nodes_near_position(
@@ -262,63 +408,95 @@ impl GraphQueryHandler for GraphQueryHandlerImpl {
         _center: Position2D, 
         _radius: f64
     ) -> GraphQueryResult<Vec<NodeInfo>> {
-        // TODO: Implement spatial queries
+        // TODO: Implement spatial queries - requires position tracking in projections
         Ok(Vec::new())
     }
     
     async fn get_edge(&self, _edge_id: EdgeId) -> GraphQueryResult<EdgeInfo> {
-        // TODO: Implement using edge projection
-        Err(GraphQueryError::DataAccessError("Not implemented yet".to_string()))
+        // TODO: Implement using edge projection when available
+        Err(GraphQueryError::DataAccessError("Edge queries not yet implemented - missing edge projection".to_string()))
     }
     
     async fn get_edges_in_graph(&self, _graph_id: GraphId) -> GraphQueryResult<Vec<EdgeInfo>> {
-        // TODO: Implement using edge list projection
+        // TODO: Implement using edge list projection when available
         Ok(Vec::new())
     }
     
     async fn get_edges_by_type(&self, _graph_id: GraphId, _edge_type: &str) -> GraphQueryResult<Vec<EdgeInfo>> {
-        // TODO: Implement filtering by edge type
+        // TODO: Implement filtering by edge type - requires edge projection
         Ok(Vec::new())
     }
     
     async fn get_node_edges(&self, _node_id: NodeId) -> GraphQueryResult<Vec<EdgeInfo>> {
-        // TODO: Implement using adjacency index
+        // TODO: Implement using adjacency index - requires edge projection
         Ok(Vec::new())
     }
     
     async fn get_incoming_edges(&self, _node_id: NodeId) -> GraphQueryResult<Vec<EdgeInfo>> {
-        // TODO: Implement using incoming edge index
+        // TODO: Implement using incoming edge index - requires edge projection
         Ok(Vec::new())
     }
     
     async fn get_outgoing_edges(&self, _node_id: NodeId) -> GraphQueryResult<Vec<EdgeInfo>> {
-        // TODO: Implement using outgoing edge index
+        // TODO: Implement using outgoing edge index - requires edge projection
         Ok(Vec::new())
     }
     
-    async fn get_graph_structure(&self, _graph_id: GraphId) -> GraphQueryResult<GraphStructure> {
-        // TODO: Implement using combined projections
+    async fn get_graph_structure(&self, graph_id: GraphId) -> GraphQueryResult<GraphStructure> {
+        let nodes = self.get_nodes_in_graph(graph_id).await?;
+        let edges = self.get_edges_in_graph(graph_id).await?;
+        
+        // Build adjacency list from edges
+        let mut adjacency_list = HashMap::new();
+        for edge in &edges {
+            adjacency_list
+                .entry(edge.source_id)
+                .or_insert_with(Vec::new)
+                .push(edge.target_id);
+        }
+        
         Ok(GraphStructure {
-            nodes: Vec::new(),
-            edges: Vec::new(),
-            adjacency_list: HashMap::new(),
+            nodes,
+            edges,
+            adjacency_list,
         })
     }
     
-    async fn get_graph_metrics(&self, _graph_id: GraphId) -> GraphQueryResult<GraphMetrics> {
-        // TODO: Implement metrics calculation
+    async fn get_graph_metrics(&self, graph_id: GraphId) -> GraphQueryResult<GraphMetrics> {
+        let summary = self.graph_summary_projection
+            .get_summary(&graph_id)
+            .ok_or(GraphQueryError::GraphNotFound(graph_id))?;
+        
+        // Calculate basic metrics from summary
+        let node_count = summary.node_count;
+        let edge_count = summary.edge_count;
+        
+        // Calculate density: edges / (nodes * (nodes - 1) / 2)
+        let density = if node_count > 1 {
+            (2.0 * edge_count as f64) / (node_count as f64 * (node_count as f64 - 1.0))
+        } else {
+            0.0
+        };
+        
+        // Calculate average degree: 2 * edges / nodes
+        let average_degree = if node_count > 0 {
+            (2.0 * edge_count as f64) / node_count as f64
+        } else {
+            0.0
+        };
+        
         Ok(GraphMetrics {
-            node_count: 0,
-            edge_count: 0,
-            density: 0.0,
-            average_degree: 0.0,
-            connected_components: 0,
-            has_cycles: false,
+            node_count,
+            edge_count,
+            density,
+            average_degree,
+            connected_components: 1, // TODO: Implement proper connected components analysis
+            has_cycles: false,      // TODO: Implement cycle detection algorithm
         })
     }
     
     async fn find_connected_components(&self, _graph_id: GraphId) -> GraphQueryResult<Vec<Vec<NodeId>>> {
-        // TODO: Implement connected components algorithm
+        // TODO: Implement connected components algorithm using graph structure
         Ok(Vec::new())
     }
     
@@ -333,18 +511,22 @@ impl GraphQueryHandler for GraphQueryHandlerImpl {
     }
     
     async fn has_cycles(&self, _graph_id: GraphId) -> GraphQueryResult<bool> {
-        // TODO: Implement cycle detection algorithm
+        // TODO: Implement cycle detection algorithm using DFS
         Ok(false)
     }
     
-    async fn find_source_nodes(&self, _graph_id: GraphId) -> GraphQueryResult<Vec<NodeInfo>> {
-        // TODO: Find nodes with no incoming edges
-        Ok(Vec::new())
+    async fn find_source_nodes(&self, graph_id: GraphId) -> GraphQueryResult<Vec<NodeInfo>> {
+        // TODO: Find nodes with no incoming edges - requires edge projection
+        // For now, return all nodes as a placeholder
+        let nodes = self.get_nodes_in_graph(graph_id).await?;
+        Ok(nodes)
     }
     
-    async fn find_sink_nodes(&self, _graph_id: GraphId) -> GraphQueryResult<Vec<NodeInfo>> {
-        // TODO: Find nodes with no outgoing edges
-        Ok(Vec::new())
+    async fn find_sink_nodes(&self, graph_id: GraphId) -> GraphQueryResult<Vec<NodeInfo>> {
+        // TODO: Find nodes with no outgoing edges - requires edge projection  
+        // For now, return all nodes as a placeholder
+        let nodes = self.get_nodes_in_graph(graph_id).await?;
+        Ok(nodes)
     }
 }
 
@@ -423,5 +605,227 @@ mod tests {
 
         assert_eq!(filter.node_types.as_ref().unwrap().len(), 2);
         assert!(filter.name_contains.as_ref().unwrap().contains("test"));
+    }
+
+    #[tokio::test]
+    async fn test_graph_queries_with_data() {
+        use crate::projections::{GraphSummaryProjection, NodeListProjection, GraphProjection};
+        use crate::domain_events::GraphDomainEvent;
+        use crate::events::{GraphCreated, NodeAdded};
+        use chrono::Utc;
+
+        // Create projections with test data
+        let mut graph_summary = GraphSummaryProjection::new();
+        let mut node_list = NodeListProjection::new();
+        
+        let graph_id = GraphId::new();
+        let node_id = NodeId::new();
+        let now = Utc::now();
+        
+        // Add test graph
+        let graph_event = GraphDomainEvent::GraphCreated(GraphCreated {
+            graph_id,
+            name: "Test Graph".to_string(),
+            description: "A test graph for queries".to_string(),
+            metadata: std::collections::HashMap::new(),
+            created_at: now,
+        });
+        
+        graph_summary.handle_graph_event(graph_event.clone()).await.unwrap();
+        
+        // Add test node
+        let mut node_metadata = std::collections::HashMap::new();
+        node_metadata.insert("name".to_string(), serde_json::Value::String("Test Node".to_string()));
+        
+        let node_event = GraphDomainEvent::NodeAdded(NodeAdded {
+            graph_id,
+            node_id,
+            node_type: "TestType".to_string(),
+            metadata: node_metadata,
+        });
+        
+        // Handle node event in both projections
+        graph_summary.handle_graph_event(node_event.clone()).await.unwrap();
+        node_list.handle_graph_event(node_event).await.unwrap();
+        
+        // Create handler with test data
+        let handler = GraphQueryHandlerImpl::with_projections(graph_summary, node_list);
+        
+        // Test get_graph
+        let graph_info = handler.get_graph(graph_id).await.unwrap();
+        assert_eq!(graph_info.name, "Test Graph");
+        assert_eq!(graph_info.node_count, 1);
+        assert_eq!(graph_info.edge_count, 0);
+        
+        // Test get_all_graphs
+        let all_graphs = handler.get_all_graphs(PaginationParams::default()).await.unwrap();
+        assert_eq!(all_graphs.len(), 1);
+        assert_eq!(all_graphs[0].graph_id, graph_id);
+        
+        // Test search_graphs
+        let search_results = handler.search_graphs("test", PaginationParams::default()).await.unwrap();
+        assert_eq!(search_results.len(), 1);
+        
+        let no_results = handler.search_graphs("nonexistent", PaginationParams::default()).await.unwrap();
+        assert_eq!(no_results.len(), 0);
+        
+        // Test get_node
+        let node_info = handler.get_node(node_id).await.unwrap();
+        assert_eq!(node_info.node_id, node_id);
+        assert_eq!(node_info.graph_id, graph_id);
+        assert_eq!(node_info.node_type, "TestType");
+        
+        // Test get_nodes_in_graph
+        let nodes_in_graph = handler.get_nodes_in_graph(graph_id).await.unwrap();
+        assert_eq!(nodes_in_graph.len(), 1);
+        assert_eq!(nodes_in_graph[0].node_id, node_id);
+        
+        // Test get_nodes_by_type
+        let typed_nodes = handler.get_nodes_by_type(graph_id, "TestType").await.unwrap();
+        assert_eq!(typed_nodes.len(), 1);
+        
+        let no_typed_nodes = handler.get_nodes_by_type(graph_id, "NonExistentType").await.unwrap();
+        assert_eq!(no_typed_nodes.len(), 0);
+        
+        // Test get_graph_metrics
+        let metrics = handler.get_graph_metrics(graph_id).await.unwrap();
+        assert_eq!(metrics.node_count, 1);
+        assert_eq!(metrics.edge_count, 0);
+        assert_eq!(metrics.density, 0.0); // No edges in a single node graph
+        assert_eq!(metrics.average_degree, 0.0); // No edges
+    }
+
+    #[tokio::test]
+    async fn test_filter_graphs() {
+        use crate::projections::{GraphSummaryProjection, NodeListProjection, GraphProjection};
+        use crate::domain_events::GraphDomainEvent;
+        use crate::events::GraphCreated;
+        use chrono::{Utc, Duration};
+
+        let mut graph_summary = GraphSummaryProjection::new();
+        let node_list = NodeListProjection::new();
+        
+        let now = Utc::now();
+        let past = now - Duration::days(1);
+        let future = now + Duration::days(1);
+        
+        // Add two test graphs with different creation times
+        let graph1_id = GraphId::new();
+        let graph2_id = GraphId::new();
+        
+        let graph1_event = GraphDomainEvent::GraphCreated(GraphCreated {
+            graph_id: graph1_id,
+            name: "Early Graph".to_string(),
+            description: "Created in the past".to_string(),
+            metadata: std::collections::HashMap::new(),
+            created_at: past,
+        });
+        
+        let graph2_event = GraphDomainEvent::GraphCreated(GraphCreated {
+            graph_id: graph2_id,
+            name: "Recent Graph".to_string(),
+            description: "Created more recently".to_string(),
+            metadata: std::collections::HashMap::new(),
+            created_at: now,
+        });
+        
+        graph_summary.handle_graph_event(graph1_event).await.unwrap();
+        graph_summary.handle_graph_event(graph2_event).await.unwrap();
+        
+        let handler = GraphQueryHandlerImpl::with_projections(graph_summary, node_list);
+        
+        // Test date filtering
+        let filter = FilterParams {
+            created_after: Some(past + Duration::hours(12)),
+            created_before: None,
+            name_contains: None,
+            node_types: None,
+            edge_types: None,
+        };
+        
+        let filtered = handler.filter_graphs(filter, PaginationParams::default()).await.unwrap();
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].name, "Recent Graph");
+        
+        // Test name filtering
+        let name_filter = FilterParams {
+            created_after: None,
+            created_before: None,
+            name_contains: Some("early".to_string()),
+            node_types: None,
+            edge_types: None,
+        };
+        
+        let name_filtered = handler.filter_graphs(name_filter, PaginationParams::default()).await.unwrap();
+        assert_eq!(name_filtered.len(), 1);
+        assert_eq!(name_filtered[0].name, "Early Graph");
+    }
+
+    #[tokio::test]
+    async fn test_pagination() {
+        use crate::projections::{GraphSummaryProjection, NodeListProjection, GraphProjection};
+        use crate::domain_events::GraphDomainEvent;
+        use crate::events::GraphCreated;
+        use chrono::Utc;
+
+        let mut graph_summary = GraphSummaryProjection::new();
+        let node_list = NodeListProjection::new();
+        
+        // Add multiple graphs
+        for i in 0..5 {
+            let graph_id = GraphId::new();
+            let event = GraphDomainEvent::GraphCreated(GraphCreated {
+                graph_id,
+                name: format!("Graph {}", i),
+                description: format!("Test graph number {}", i),
+                metadata: std::collections::HashMap::new(),
+                created_at: Utc::now(),
+            });
+            
+            graph_summary.handle_graph_event(event).await.unwrap();
+        }
+        
+        let handler = GraphQueryHandlerImpl::with_projections(graph_summary, node_list);
+        
+        // Test pagination - first page
+        let first_page = handler.get_all_graphs(PaginationParams {
+            offset: 0,
+            limit: 3,
+        }).await.unwrap();
+        assert_eq!(first_page.len(), 3);
+        
+        // Test pagination - second page
+        let second_page = handler.get_all_graphs(PaginationParams {
+            offset: 3,
+            limit: 3,
+        }).await.unwrap();
+        assert_eq!(second_page.len(), 2);
+        
+        // Test pagination beyond available data
+        let empty_page = handler.get_all_graphs(PaginationParams {
+            offset: 10,
+            limit: 3,
+        }).await.unwrap();
+        assert_eq!(empty_page.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_error_cases() {
+        let handler = GraphQueryHandlerImpl::new();
+        
+        let nonexistent_graph = GraphId::new();
+        let nonexistent_node = NodeId::new();
+        
+        // Test graph not found
+        let graph_result = handler.get_graph(nonexistent_graph).await;
+        assert!(matches!(graph_result, Err(GraphQueryError::GraphNotFound(_))));
+        
+        // Test node not found
+        let node_result = handler.get_node(nonexistent_node).await;
+        assert!(matches!(node_result, Err(GraphQueryError::NodeNotFound(_))));
+        
+        // Test metrics for nonexistent graph
+        let metrics_result = handler.get_graph_metrics(nonexistent_graph).await;
+        assert!(matches!(metrics_result, Err(GraphQueryError::GraphNotFound(_))));
     }
 }
