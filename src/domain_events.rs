@@ -1,6 +1,6 @@
 //! Domain events enum for graph domain
 
-use crate::events::{GraphCreated, NodeAdded, NodeRemoved, NodeUpdated, EdgeAdded, EdgeRemoved};
+use crate::events::{GraphCreated, NodeAdded, NodeRemoved, EdgeAdded, EdgeRemoved};
 use cim_domain::DomainEvent;
 use serde::{Deserialize, Serialize};
 
@@ -13,8 +13,6 @@ pub enum GraphDomainEvent {
     NodeAdded(NodeAdded),
     /// A node was removed from a graph
     NodeRemoved(NodeRemoved),
-    /// A node's metadata was updated
-    NodeUpdated(NodeUpdated),
     /// An edge was added between nodes
     EdgeAdded(EdgeAdded),
     /// An edge was removed from the graph
@@ -27,7 +25,6 @@ impl DomainEvent for GraphDomainEvent {
             Self::GraphCreated(e) => e.subject(),
             Self::NodeAdded(e) => e.subject(),
             Self::NodeRemoved(e) => e.subject(),
-            Self::NodeUpdated(e) => e.subject(),
             Self::EdgeAdded(e) => e.subject(),
             Self::EdgeRemoved(e) => e.subject(),
         }
@@ -38,7 +35,6 @@ impl DomainEvent for GraphDomainEvent {
             Self::GraphCreated(e) => e.aggregate_id(),
             Self::NodeAdded(e) => e.aggregate_id(),
             Self::NodeRemoved(e) => e.aggregate_id(),
-            Self::NodeUpdated(e) => e.aggregate_id(),
             Self::EdgeAdded(e) => e.aggregate_id(),
             Self::EdgeRemoved(e) => e.aggregate_id(),
         }
@@ -49,7 +45,6 @@ impl DomainEvent for GraphDomainEvent {
             Self::GraphCreated(e) => e.event_type(),
             Self::NodeAdded(e) => e.event_type(),
             Self::NodeRemoved(e) => e.event_type(),
-            Self::NodeUpdated(e) => e.event_type(),
             Self::EdgeAdded(e) => e.event_type(),
             Self::EdgeRemoved(e) => e.event_type(),
         }

@@ -18,6 +18,36 @@ pub use aggregate::*;
 pub use events::*;
 pub use domain_events::*;
 
+// Re-export commands and their types
+pub use commands::{
+    GraphCommand, NodeCommand, EdgeCommand, 
+    GraphCommandResult, GraphCommandError
+};
+
+// Re-export query types
+pub use queries::{
+    GraphQueryHandler, GraphQueryHandlerImpl,
+    GraphQueryResult, GraphQueryError,
+    GraphInfo, NodeInfo, EdgeInfo, GraphStructure, GraphMetrics,
+    PaginationParams, FilterParams
+};
+
+// Re-export command handlers
+pub use handlers::{
+    GraphCommandHandler, GraphCommandHandlerImpl,
+    GraphRepository, InMemoryGraphRepository
+};
+
+// Re-export value objects
+pub use value_objects::{
+    NodeType, EdgeType, Position2D, Position3D, Size, Color, Style
+};
+
+// Re-export projections
+pub use projections::{
+    GraphProjection, GraphSummaryProjection, NodeListProjection
+};
+
 // Re-export identifiers that will eventually move here
 pub use cim_domain::{NodeId, EdgeId};
 pub use cim_domain::GraphId;

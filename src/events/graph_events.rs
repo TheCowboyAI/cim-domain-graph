@@ -46,16 +46,7 @@ pub struct NodeRemoved {
     pub node_id: NodeId,
 }
 
-/// Node updated event
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NodeUpdated {
-    /// The graph containing the updated node
-    pub graph_id: GraphId,
-    /// The ID of the node that was updated
-    pub node_id: NodeId,
-    /// The updated metadata for the node
-    pub metadata: HashMap<String, serde_json::Value>,
-}
+
 
 /// Edge added event
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -126,19 +117,7 @@ impl DomainEvent for NodeRemoved {
     }
 }
 
-impl DomainEvent for NodeUpdated {
-    fn aggregate_id(&self) -> Uuid {
-        self.graph_id.into()
-    }
 
-    fn event_type(&self) -> &'static str {
-        "NodeUpdated"
-    }
-
-    fn subject(&self) -> String {
-        format!("graphs.node.updated.v1")
-    }
-}
 
 impl DomainEvent for EdgeAdded {
     fn aggregate_id(&self) -> Uuid {

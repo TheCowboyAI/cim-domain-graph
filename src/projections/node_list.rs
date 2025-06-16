@@ -4,7 +4,7 @@
 
 use crate::{
     domain_events::{GraphDomainEvent},
-    events::{NodeAdded, NodeRemoved, NodeUpdated},
+    events::{NodeAdded, NodeRemoved},
     GraphId, NodeId,
 };
 use cim_domain::projections::{EventSequence, Projection};
@@ -112,10 +112,16 @@ impl NodeListProjection {
 
 #[async_trait]
 impl Projection for NodeListProjection {
-    async fn handle_event(&mut self, _event: DomainEventEnum) -> Result<(), String> {
-        // For now, we'll skip handling since this requires integration with cim-domain
-        // TODO: Implement proper event handling for graph domain
-        Ok(())
+    async fn handle_event(&mut self, event: DomainEventEnum) -> Result<(), String> {
+        // Handle graph domain events by extracting them from the enum
+        match event {
+            // When graph domain events are properly integrated into DomainEventEnum,
+            // we can match on them here. For now, we'll use our graph-specific handler.
+            _ => {
+                // TODO: Integrate with DomainEventEnum once graph events are added
+                Ok(())
+            }
+        }
     }
 
     async fn clear(&mut self) -> Result<(), String> {
@@ -191,25 +197,7 @@ impl super::GraphProjection for NodeListProjection {
                 }
             }
 
-            GraphDomainEvent::NodeUpdated(NodeUpdated {
-                node_id,
-                metadata,
-                ..
-            }) => {
-                // Update node metadata
-                if let Some(node_info) = self.nodes.get_mut(&node_id) {
-                    node_info.metadata = metadata.clone();
 
-                    // Update name if present
-                    if let Some(name) = metadata
-                        .get("name")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string())
-                    {
-                        node_info.name = Some(name);
-                    }
-                }
-            }
 
             _ => {
                 // Ignore other graph events

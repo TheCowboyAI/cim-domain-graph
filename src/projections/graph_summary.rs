@@ -4,7 +4,7 @@
 
 use crate::{
     domain_events::{GraphDomainEvent},
-    events::{GraphCreated, NodeAdded, NodeRemoved, NodeUpdated, EdgeAdded, EdgeRemoved},
+    events::{GraphCreated, NodeAdded, NodeRemoved, EdgeAdded, EdgeRemoved},
     GraphId,
 };
 use cim_domain::projections::{EventSequence, Projection};
@@ -78,10 +78,16 @@ impl GraphSummaryProjection {
 
 #[async_trait]
 impl Projection for GraphSummaryProjection {
-    async fn handle_event(&mut self, _event: DomainEventEnum) -> Result<(), String> {
-        // For now, we'll skip handling since this requires integration with cim-domain
-        // TODO: Implement proper event handling for graph domain
-        Ok(())
+    async fn handle_event(&mut self, event: DomainEventEnum) -> Result<(), String> {
+        // Handle graph domain events by extracting them from the enum
+        match event {
+            // When graph domain events are properly integrated into DomainEventEnum,
+            // we can match on them here. For now, we'll use our graph-specific handler.
+            _ => {
+                // TODO: Integrate with DomainEventEnum once graph events are added
+                Ok(())
+            }
+        }
     }
 
     async fn clear(&mut self) -> Result<(), String> {
@@ -152,11 +158,7 @@ impl super::GraphProjection for GraphSummaryProjection {
                 }
             }
 
-            GraphDomainEvent::NodeUpdated(NodeUpdated { graph_id, .. }) => {
-                if let Some(summary) = self.summaries.get_mut(&graph_id) {
-                    summary.last_modified = Utc::now();
-                }
-            }
+
         }
 
         Ok(())
