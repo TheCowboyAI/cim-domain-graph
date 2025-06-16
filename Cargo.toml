@@ -1,6 +1,6 @@
 [package]
 name = "cim-domain-graph"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["The CowboyAI Team"]
 description = "Graph domain for the Composable Information Machine - Core composition layer"
