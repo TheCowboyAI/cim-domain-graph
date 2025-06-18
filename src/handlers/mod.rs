@@ -255,9 +255,6 @@ impl GraphCommandHandler for GraphCommandHandlerImpl {
 /// In-memory implementation of graph repository for testing
 pub struct InMemoryGraphRepository {
     graphs: std::sync::Mutex<std::collections::HashMap<GraphId, Graph>>,
-    next_graph_counter: std::sync::atomic::AtomicU64,
-    next_node_counter: std::sync::atomic::AtomicU64,
-    next_edge_counter: std::sync::atomic::AtomicU64,
 }
 
 impl InMemoryGraphRepository {
@@ -265,9 +262,6 @@ impl InMemoryGraphRepository {
     pub fn new() -> Self {
         Self {
             graphs: std::sync::Mutex::new(std::collections::HashMap::new()),
-            next_graph_counter: std::sync::atomic::AtomicU64::new(1),
-            next_node_counter: std::sync::atomic::AtomicU64::new(1),
-            next_edge_counter: std::sync::atomic::AtomicU64::new(1),
         }
     }
 }
