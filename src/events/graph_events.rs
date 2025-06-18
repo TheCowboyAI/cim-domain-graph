@@ -85,7 +85,7 @@ impl DomainEvent for GraphCreated {
     }
 
     fn subject(&self) -> String {
-        format!("graphs.graph.created.v1")
+        "graphs.graph.created.v1".to_string()
     }
 }
 
@@ -99,7 +99,7 @@ impl DomainEvent for NodeAdded {
     }
 
     fn subject(&self) -> String {
-        format!("graphs.node.added.v1")
+        "graphs.node.added.v1".to_string()
     }
 }
 
@@ -113,7 +113,7 @@ impl DomainEvent for NodeRemoved {
     }
 
     fn subject(&self) -> String {
-        format!("graphs.node.removed.v1")
+        "graphs.node.removed.v1".to_string()
     }
 }
 
@@ -129,7 +129,7 @@ impl DomainEvent for EdgeAdded {
     }
 
     fn subject(&self) -> String {
-        format!("graphs.edge.added.v1")
+        "graphs.edge.added.v1".to_string()
     }
 }
 
@@ -143,6 +143,6 @@ impl DomainEvent for EdgeRemoved {
     }
 
     fn subject(&self) -> String {
-        format!("graphs.edge.removed.v1")
+        "graphs.edge.removed.v1".to_string()
     }
 }

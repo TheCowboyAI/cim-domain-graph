@@ -257,6 +257,12 @@ pub struct InMemoryGraphRepository {
     graphs: std::sync::Mutex<std::collections::HashMap<GraphId, Graph>>,
 }
 
+impl Default for InMemoryGraphRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InMemoryGraphRepository {
     /// Create a new in-memory repository
     pub fn new() -> Self {

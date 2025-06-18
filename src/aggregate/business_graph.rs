@@ -155,7 +155,7 @@ impl Graph {
         // Check if node already exists
         if self.nodes.contains_key(&node_id) {
             return Err(GraphCommandError::BusinessRuleViolation(
-                format!("Node {} already exists", node_id)
+                format!("Node {node_id} already exists")
             ));
         }
 
@@ -230,7 +230,7 @@ impl Graph {
         // Check if edge already exists
         if self.edges.contains_key(&edge_id) {
             return Err(GraphCommandError::BusinessRuleViolation(
-                format!("Edge {} already exists", edge_id)
+                format!("Edge {edge_id} already exists")
             ));
         }
 
@@ -288,11 +288,10 @@ impl Graph {
         let mut rec_stack = std::collections::HashSet::new();
 
         for node_id in self.nodes.keys() {
-            if !visited.contains(node_id) {
-                if self.has_cycle_util(*node_id, &mut visited, &mut rec_stack) {
+            if !visited.contains(node_id)
+                && self.has_cycle_util(*node_id, &mut visited, &mut rec_stack) {
                     return true;
                 }
-            }
         }
 
         false

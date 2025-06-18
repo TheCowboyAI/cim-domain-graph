@@ -108,6 +108,12 @@ pub struct DomainGraph {
     pub edges: Vec<DomainEdge>,
 }
 
+impl Default for DomainGraph {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DomainGraph {
     /// Create a new empty domain graph
     pub fn new() -> Self {
@@ -154,10 +160,10 @@ impl DomainGraph {
 
         // Generate subgraphs for each module
         for (module, nodes) in modules {
-            writeln!(&mut output, "    subgraph {}", module).unwrap();
+            writeln!(&mut output, "    subgraph {module}").unwrap();
             for node in nodes {
                 let node_def = self.format_node(node);
-                writeln!(&mut output, "        {}", node_def).unwrap();
+                writeln!(&mut output, "        {node_def}").unwrap();
             }
             writeln!(&mut output, "    end").unwrap();
             writeln!(&mut output).unwrap();
@@ -167,7 +173,7 @@ impl DomainGraph {
         writeln!(&mut output, "    %% Relationships").unwrap();
         for edge in &self.edges {
             let edge_def = self.format_edge(edge);
-            writeln!(&mut output, "    {}", edge_def).unwrap();
+            writeln!(&mut output, "    {edge_def}").unwrap();
         }
 
         // Apply styles
@@ -206,8 +212,8 @@ impl DomainGraph {
 
         // Generate subgraphs
         for (idx, (module, nodes)) in modules.iter().enumerate() {
-            writeln!(&mut output, "    subgraph cluster_{} {{", idx).unwrap();
-            writeln!(&mut output, "        label=\"{}\";", module).unwrap();
+            writeln!(&mut output, "    subgraph cluster_{idx} {{").unwrap();
+            writeln!(&mut output, "        label=\"{module}\";").unwrap();
             writeln!(&mut output, "        style=filled;").unwrap();
             writeln!(&mut output, "        color=lightgrey;").unwrap();
             writeln!(&mut output).unwrap();
@@ -226,7 +232,7 @@ impl DomainGraph {
 
                 let mut label = format!("{{<b>{}</b>", node.name);
                 if !node.fields.is_empty() {
-                    label.push_str("|");
+                    label.push('|');
                     for field in &node.fields {
                         label.push_str(&format!("{}:{}", field.name, field.field_type));
                         if field.is_optional {

@@ -152,12 +152,12 @@ pub enum GraphCommandError {
 impl std::fmt::Display for GraphCommandError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            GraphCommandError::GraphNotFound(id) => write!(f, "Graph not found: {}", id),
-            GraphCommandError::NodeNotFound(id) => write!(f, "Node not found: {}", id),
-            GraphCommandError::EdgeNotFound(id) => write!(f, "Edge not found: {}", id),
-            GraphCommandError::InvalidCommand(msg) => write!(f, "Invalid command: {}", msg),
-            GraphCommandError::BusinessRuleViolation(msg) => write!(f, "Business rule violation: {}", msg),
-            GraphCommandError::ConcurrentModification(msg) => write!(f, "Concurrent modification: {}", msg),
+            GraphCommandError::GraphNotFound(id) => write!(f, "Graph not found: {id}"),
+            GraphCommandError::NodeNotFound(id) => write!(f, "Node not found: {id}"),
+            GraphCommandError::EdgeNotFound(id) => write!(f, "Edge not found: {id}"),
+            GraphCommandError::InvalidCommand(msg) => write!(f, "Invalid command: {msg}"),
+            GraphCommandError::BusinessRuleViolation(msg) => write!(f, "Business rule violation: {msg}"),
+            GraphCommandError::ConcurrentModification(msg) => write!(f, "Concurrent modification: {msg}"),
         }
     }
 }

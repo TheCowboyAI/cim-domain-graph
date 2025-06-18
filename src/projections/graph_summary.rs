@@ -42,6 +42,12 @@ pub struct GraphSummaryProjection {
     checkpoint: Option<EventSequence>,
 }
 
+impl Default for GraphSummaryProjection {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GraphSummaryProjection {
     /// Create a new graph summary projection
     pub fn new() -> Self {
@@ -78,16 +84,10 @@ impl GraphSummaryProjection {
 
 #[async_trait]
 impl Projection for GraphSummaryProjection {
-    async fn handle_event(&mut self, event: DomainEventEnum) -> Result<(), String> {
+    async fn handle_event(&mut self, _event: DomainEventEnum) -> Result<(), String> {
         // Handle graph domain events by extracting them from the enum
-        match event {
-            // When graph domain events are properly integrated into DomainEventEnum,
-            // we can match on them here. For now, we'll use our graph-specific handler.
-            _ => {
-                // TODO: Integrate with DomainEventEnum once graph events are added
-                Ok(())
-            }
-        }
+        // Note: This projection uses handle_graph_event for actual processing
+        Ok(())
     }
 
     async fn clear(&mut self) -> Result<(), String> {

@@ -43,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if !missing.is_empty() {
         println!("\nWarning: Found {} missing elements referenced in relationships:", missing.len());
         for name in missing {
-            println!("  - {}", name);
+            println!("  - {name}");
         }
     }
 
@@ -78,7 +78,7 @@ fn generate_analysis_report(graph: &DomainGraph) -> String {
     report.push_str("| Type | Count |\n");
     report.push_str("|------|-------|\n");
     for (element_type, count) in type_counts {
-        report.push_str(&format!("| {:?} | {} |\n", element_type, count));
+        report.push_str(&format!("| {element_type:?} | {count} |\n"));
     }
 
     report.push_str("\n### Relationship Summary\n\n");
@@ -93,7 +93,7 @@ fn generate_analysis_report(graph: &DomainGraph) -> String {
     report.push_str("| Relationship Type | Count |\n");
     report.push_str("|-------------------|-------|\n");
     for (rel_type, count) in rel_counts {
-        report.push_str(&format!("| {:?} | {} |\n", rel_type, count));
+        report.push_str(&format!("| {rel_type:?} | {count} |\n"));
     }
 
     report.push_str("\n## Detailed Element List\n\n");
@@ -105,7 +105,7 @@ fn generate_analysis_report(graph: &DomainGraph) -> String {
     }
 
     for (module, nodes) in modules {
-        report.push_str(&format!("### Module: {}\n\n", module));
+        report.push_str(&format!("### Module: {module}\n\n"));
 
         for node in nodes {
             report.push_str(&format!("#### {} ({:?})\n\n", node.name, node.element_type));
@@ -117,23 +117,23 @@ fn generate_analysis_report(graph: &DomainGraph) -> String {
                     let coll = if field.is_collection { "[]" } else { "" };
                     report.push_str(&format!("- {}: {}{}{}\n", field.name, field.field_type, coll, opt));
                 }
-                report.push_str("\n");
+                report.push('\n');
             }
 
             if !node.methods.is_empty() {
                 report.push_str("**Methods:**\n");
                 for method in &node.methods {
-                    report.push_str(&format!("- {}\n", method));
+                    report.push_str(&format!("- {method}\n"));
                 }
-                report.push_str("\n");
+                report.push('\n');
             }
 
             if !node.traits.is_empty() {
                 report.push_str("**Implements:**\n");
                 for trait_name in &node.traits {
-                    report.push_str(&format!("- {}\n", trait_name));
+                    report.push_str(&format!("- {trait_name}\n"));
                 }
-                report.push_str("\n");
+                report.push('\n');
             }
         }
     }

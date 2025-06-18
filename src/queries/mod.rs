@@ -30,11 +30,11 @@ pub enum GraphQueryError {
 impl std::fmt::Display for GraphQueryError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            GraphQueryError::GraphNotFound(id) => write!(f, "Graph not found: {}", id),
-            GraphQueryError::NodeNotFound(id) => write!(f, "Node not found: {}", id),
-            GraphQueryError::EdgeNotFound(id) => write!(f, "Edge not found: {}", id),
-            GraphQueryError::InvalidQuery(msg) => write!(f, "Invalid query: {}", msg),
-            GraphQueryError::DataAccessError(msg) => write!(f, "Data access error: {}", msg),
+            GraphQueryError::GraphNotFound(id) => write!(f, "Graph not found: {id}"),
+            GraphQueryError::NodeNotFound(id) => write!(f, "Node not found: {id}"),
+            GraphQueryError::EdgeNotFound(id) => write!(f, "Edge not found: {id}"),
+            GraphQueryError::InvalidQuery(msg) => write!(f, "Invalid query: {msg}"),
+            GraphQueryError::DataAccessError(msg) => write!(f, "Data access error: {msg}"),
         }
     }
 }
@@ -210,6 +210,12 @@ pub trait GraphQueryHandler: Send + Sync {
 pub struct GraphQueryHandlerImpl {
     graph_summary_projection: crate::projections::GraphSummaryProjection,
     node_list_projection: crate::projections::NodeListProjection,
+}
+
+impl Default for GraphQueryHandlerImpl {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl GraphQueryHandlerImpl {

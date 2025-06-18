@@ -37,6 +37,12 @@ pub struct NodeListProjection {
     checkpoint: Option<EventSequence>,
 }
 
+impl Default for NodeListProjection {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NodeListProjection {
     /// Create a new node list projection
     pub fn new() -> Self {
@@ -112,16 +118,10 @@ impl NodeListProjection {
 
 #[async_trait]
 impl Projection for NodeListProjection {
-    async fn handle_event(&mut self, event: DomainEventEnum) -> Result<(), String> {
+    async fn handle_event(&mut self, _event: DomainEventEnum) -> Result<(), String> {
         // Handle graph domain events by extracting them from the enum
-        match event {
-            // When graph domain events are properly integrated into DomainEventEnum,
-            // we can match on them here. For now, we'll use our graph-specific handler.
-            _ => {
-                // TODO: Integrate with DomainEventEnum once graph events are added
-                Ok(())
-            }
-        }
+        // Note: This projection uses handle_graph_event for actual processing
+        Ok(())
     }
 
     async fn clear(&mut self) -> Result<(), String> {
@@ -172,13 +172,13 @@ impl super::GraphProjection for NodeListProjection {
                 // Add to graph index
                 self.nodes_by_graph
                     .entry(graph_id)
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(node_id);
 
                 // Add to type index
                 self.nodes_by_type
                     .entry(node_type)
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(node_id);
             }
 

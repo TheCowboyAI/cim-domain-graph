@@ -111,7 +111,7 @@ impl EdgeType {
     pub fn as_str(&self) -> String {
         match self {
             EdgeType::Sequence => "sequence".to_string(),
-            EdgeType::Conditional(condition) => format!("conditional:{}", condition),
+            EdgeType::Conditional(condition) => format!("conditional:{condition}"),
             EdgeType::Parallel => "parallel".to_string(),
             EdgeType::DataFlow => "dataflow".to_string(),
             EdgeType::Association => "association".to_string(),
@@ -272,7 +272,7 @@ pub struct Style {
 impl Style {
     /// Create a new style
     pub fn new(fill_color: Color, border_color: Color, border_width: f64, opacity: f64) -> Result<Self, String> {
-        if opacity < 0.0 || opacity > 1.0 {
+        if !(0.0..=1.0).contains(&opacity) {
             return Err("Opacity must be between 0.0 and 1.0".to_string());
         }
         if border_width < 0.0 {
