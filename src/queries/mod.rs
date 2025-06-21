@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use crate::{GraphId, NodeId, EdgeId};
 use crate::value_objects::{Position2D, Position3D};
+use cim_domain::cqrs::{Query, QueryEnvelope, QueryHandler, QueryAcknowledgment, QueryStatus};
 
 /// Query result type
 pub type GraphQueryResult<T> = Result<T, GraphQueryError>;
@@ -121,6 +122,47 @@ pub struct FilterParams {
     pub name_contains: Option<String>,
 }
 
+/// Base query types that implement the Query trait
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum GraphQuery {
+    /// Get graph information by ID
+    GetGraph { graph_id: GraphId },
+    /// Get all graphs with pagination
+    GetAllGraphs { pagination: PaginationParams },
+    /// Search graphs by name or description
+    SearchGraphs { query: String, pagination: PaginationParams },
+    /// Filter graphs by criteria
+    FilterGraphs { filter: FilterParams, pagination: PaginationParams },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum NodeQuery {
+    /// Get node information by ID
+    GetNode { node_id: NodeId },
+    /// Get all nodes in a graph
+    GetNodesInGraph { graph_id: GraphId },
+    /// Get nodes by type
+    GetNodesByType { graph_id: GraphId, node_type: String },
+    /// Find nodes within a radius of a position
+    FindNodesNearPosition { graph_id: GraphId, center: Position2D, radius: f64 },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum EdgeQuery {
+    /// Get edge information by ID
+    GetEdge { edge_id: EdgeId },
+    /// Get all edges in a graph
+    GetEdgesInGraph { graph_id: GraphId },
+    /// Get edges by type
+    GetEdgesByType { graph_id: GraphId, edge_type: String },
+    /// Get edges connected to a node
+    GetNodeEdges { node_id: NodeId },
+    /// Get incoming edges for a node
+    GetIncomingEdges { node_id: NodeId },
+    /// Get outgoing edges for a node
+    GetOutgoingEdges { node_id: NodeId },
+}
+
 /// Trait for graph query operations
 #[async_trait]
 pub trait GraphQueryHandler: Send + Sync {
@@ -206,7 +248,7 @@ pub trait GraphQueryHandler: Send + Sync {
     async fn find_sink_nodes(&self, graph_id: GraphId) -> GraphQueryResult<Vec<NodeInfo>>;
 }
 
-/// Implementation of graph query handler
+/// Implementation of graph query handler with CQRS support
 pub struct GraphQueryHandlerImpl {
     graph_summary_projection: crate::projections::GraphSummaryProjection,
     node_list_projection: crate::projections::NodeListProjection,
@@ -235,6 +277,119 @@ impl GraphQueryHandlerImpl {
         Self {
             graph_summary_projection,
             node_list_projection,
+        }
+    }
+}
+
+// Implement Query trait for all query types
+impl Query for GraphQuery {}
+impl Query for NodeQuery {}
+impl Query for EdgeQuery {}
+
+// Implement QueryHandler for GraphQuery
+impl QueryHandler<GraphQuery> for GraphQueryHandlerImpl {
+    fn handle(&self, envelope: QueryEnvelope<GraphQuery>) -> QueryAcknowledgment {
+        let query_id = envelope.id;
+        let correlation_id = envelope.correlation_id().clone();
+        
+        // Process the query synchronously (blocking on async)
+        let runtime = tokio::runtime::Handle::current();
+        let result = runtime.block_on(async {
+            match &envelope.query {
+                GraphQuery::GetGraph { graph_id } => {
+                    self.get_graph(*graph_id).await.map(|info| {
+                        // TODO: Publish result to event stream with correlation
+                        serde_json::to_value(info).unwrap()
+                    })
+                }
+                GraphQuery::GetAllGraphs { pagination } => {
+                    self.get_all_graphs(pagination.clone()).await.map(|infos| {
+                        // TODO: Publish result to event stream with correlation
+                        serde_json::to_value(infos).unwrap()
+                    })
+                }
+                GraphQuery::SearchGraphs { query, pagination } => {
+                    self.search_graphs(query, pagination.clone()).await.map(|infos| {
+                        // TODO: Publish result to event stream with correlation
+                        serde_json::to_value(infos).unwrap()
+                    })
+                }
+                GraphQuery::FilterGraphs { filter, pagination } => {
+                    self.filter_graphs(filter.clone(), pagination.clone()).await.map(|infos| {
+                        // TODO: Publish result to event stream with correlation
+                        serde_json::to_value(infos).unwrap()
+                    })
+                }
+            }
+        });
+        
+        match result {
+            Ok(_) => QueryAcknowledgment {
+                query_id,
+                correlation_id,
+                status: QueryStatus::Accepted,
+                reason: None,
+            },
+            Err(error) => QueryAcknowledgment {
+                query_id,
+                correlation_id,
+                status: QueryStatus::Rejected,
+                reason: Some(error.to_string()),
+            },
+        }
+    }
+}
+
+// Implement QueryHandler for NodeQuery
+impl QueryHandler<NodeQuery> for GraphQueryHandlerImpl {
+    fn handle(&self, envelope: QueryEnvelope<NodeQuery>) -> QueryAcknowledgment {
+        let query_id = envelope.id;
+        let correlation_id = envelope.correlation_id().clone();
+        
+        // Process the query synchronously (blocking on async)
+        let runtime = tokio::runtime::Handle::current();
+        let result = runtime.block_on(async {
+            match &envelope.query {
+                NodeQuery::GetNode { node_id } => {
+                    self.get_node(*node_id).await.map(|info| {
+                        // TODO: Publish result to event stream with correlation
+                        serde_json::to_value(info).unwrap()
+                    })
+                }
+                NodeQuery::GetNodesInGraph { graph_id } => {
+                    self.get_nodes_in_graph(*graph_id).await.map(|infos| {
+                        // TODO: Publish result to event stream with correlation
+                        serde_json::to_value(infos).unwrap()
+                    })
+                }
+                NodeQuery::GetNodesByType { graph_id, node_type } => {
+                    self.get_nodes_by_type(*graph_id, node_type).await.map(|infos| {
+                        // TODO: Publish result to event stream with correlation
+                        serde_json::to_value(infos).unwrap()
+                    })
+                }
+                NodeQuery::FindNodesNearPosition { graph_id, center, radius } => {
+                    self.find_nodes_near_position(*graph_id, *center, *radius).await.map(|infos| {
+                        // TODO: Publish result to event stream with correlation
+                        serde_json::to_value(infos).unwrap()
+                    })
+                }
+            }
+        });
+        
+        match result {
+            Ok(_) => QueryAcknowledgment {
+                query_id,
+                correlation_id,
+                status: QueryStatus::Accepted,
+                reason: None,
+            },
+            Err(error) => QueryAcknowledgment {
+                query_id,
+                correlation_id,
+                status: QueryStatus::Rejected,
+                reason: Some(error.to_string()),
+            },
         }
     }
 }

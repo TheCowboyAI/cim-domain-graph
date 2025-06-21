@@ -5,7 +5,10 @@
 
 use async_trait::async_trait;
 use std::sync::Arc;
-use cim_domain::AggregateRoot;
+use cim_domain::{
+    AggregateRoot,
+    cqrs::{Command, CommandEnvelope, CommandHandler, CommandAcknowledgment, CommandStatus},
+};
 use crate::{
     GraphId, NodeId, EdgeId,
     commands::{GraphCommand, NodeCommand, EdgeCommand, GraphCommandResult, GraphCommandError},
@@ -59,11 +62,13 @@ impl GraphCommandHandlerImpl {
     pub fn new(repository: Arc<dyn GraphRepository>) -> Self {
         Self { repository }
     }
-}
-
-#[async_trait]
-impl GraphCommandHandler for GraphCommandHandlerImpl {
-    async fn handle_graph_command(&self, command: GraphCommand) -> GraphCommandResult<Vec<GraphDomainEvent>> {
+    
+    /// Process a graph command and return events with correlation
+    async fn process_graph_command(
+        &self,
+        command: GraphCommand,
+        envelope: &CommandEnvelope<GraphCommand>,
+    ) -> GraphCommandResult<Vec<GraphDomainEvent>> {
         match command {
             GraphCommand::CreateGraph { name, description, metadata } => {
                 let graph_id = self.repository.next_graph_id().await?;
@@ -216,6 +221,61 @@ impl GraphCommandHandler for GraphCommandHandlerImpl {
                 Ok(vec![event])
             }
         }
+    }
+}
+
+// Implement the Command trait for GraphCommand
+impl Command for GraphCommand {
+    type Aggregate = Graph;
+    
+    fn aggregate_id(&self) -> Option<cim_domain::entity::EntityId<Self::Aggregate>> {
+        None // Graph commands don't have a pre-existing aggregate ID for creation
+    }
+}
+
+// Implement CommandHandler for GraphCommand
+impl CommandHandler<GraphCommand> for GraphCommandHandlerImpl {
+    fn handle(&mut self, envelope: CommandEnvelope<GraphCommand>) -> CommandAcknowledgment {
+        // Extract the command
+        let command = envelope.command.clone();
+        let command_id = envelope.id;
+        let correlation_id = envelope.correlation_id().clone();
+        
+        // Process the command synchronously (blocking on async)
+        let runtime = tokio::runtime::Handle::current();
+        let result = runtime.block_on(async {
+            self.process_graph_command(command, &envelope).await
+        });
+        
+        match result {
+            Ok(_events) => {
+                // TODO: Publish events with correlation/causation from envelope
+                CommandAcknowledgment {
+                    command_id,
+                    correlation_id,
+                    status: CommandStatus::Accepted,
+                    reason: None,
+                }
+            }
+            Err(error) => {
+                CommandAcknowledgment {
+                    command_id,
+                    correlation_id,
+                    status: CommandStatus::Rejected,
+                    reason: Some(error.to_string()),
+                }
+            }
+        }
+    }
+}
+
+// Keep the original GraphCommandHandler implementation for backward compatibility
+#[async_trait]
+impl GraphCommandHandler for GraphCommandHandlerImpl {
+    async fn handle_graph_command(&self, command: GraphCommand) -> GraphCommandResult<Vec<GraphDomainEvent>> {
+        // Create a command envelope for the new flow
+        let envelope = CommandEnvelope::new(command.clone(), "graph-handler".to_string());
+        self.process_graph_command(command, &envelope).await
     }
     
     async fn handle_node_command(&self, command: NodeCommand) -> GraphCommandResult<Vec<GraphDomainEvent>> {
