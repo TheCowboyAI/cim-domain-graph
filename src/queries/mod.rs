@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use crate::{GraphId, NodeId, EdgeId};
 use crate::value_objects::{Position2D, Position3D};
-use cim_domain::cqrs::{Query, QueryEnvelope, QueryHandler, QueryAcknowledgment, QueryStatus};
+use cim_domain::{Query, QueryEnvelope, QueryHandler, QueryResponse};
 
 /// Query result type
 pub type GraphQueryResult<T> = Result<T, GraphQueryError>;
@@ -288,7 +288,7 @@ impl Query for EdgeQuery {}
 
 // Implement QueryHandler for GraphQuery
 impl QueryHandler<GraphQuery> for GraphQueryHandlerImpl {
-    fn handle(&self, envelope: QueryEnvelope<GraphQuery>) -> QueryAcknowledgment {
+    fn handle(&self, envelope: QueryEnvelope<GraphQuery>) -> QueryResponse {
         let query_id = envelope.id;
         let correlation_id = envelope.correlation_id().clone();
         
@@ -324,17 +324,17 @@ impl QueryHandler<GraphQuery> for GraphQueryHandlerImpl {
         });
         
         match result {
-            Ok(_) => QueryAcknowledgment {
-                query_id,
+            Ok(value) => QueryResponse {
+                query_id: envelope.identity.message_id,
                 correlation_id,
-                status: QueryStatus::Accepted,
-                reason: None,
+                result: value,
             },
-            Err(error) => QueryAcknowledgment {
-                query_id,
+            Err(error) => QueryResponse {
+                query_id: envelope.identity.message_id,
                 correlation_id,
-                status: QueryStatus::Rejected,
-                reason: Some(error.to_string()),
+                result: serde_json::json!({
+                    "error": error.to_string()
+                }),
             },
         }
     }
@@ -342,7 +342,7 @@ impl QueryHandler<GraphQuery> for GraphQueryHandlerImpl {
 
 // Implement QueryHandler for NodeQuery
 impl QueryHandler<NodeQuery> for GraphQueryHandlerImpl {
-    fn handle(&self, envelope: QueryEnvelope<NodeQuery>) -> QueryAcknowledgment {
+    fn handle(&self, envelope: QueryEnvelope<NodeQuery>) -> QueryResponse {
         let query_id = envelope.id;
         let correlation_id = envelope.correlation_id().clone();
         
@@ -378,17 +378,17 @@ impl QueryHandler<NodeQuery> for GraphQueryHandlerImpl {
         });
         
         match result {
-            Ok(_) => QueryAcknowledgment {
-                query_id,
+            Ok(value) => QueryResponse {
+                query_id: envelope.identity.message_id,
                 correlation_id,
-                status: QueryStatus::Accepted,
-                reason: None,
+                result: value,
             },
-            Err(error) => QueryAcknowledgment {
-                query_id,
+            Err(error) => QueryResponse {
+                query_id: envelope.identity.message_id,
                 correlation_id,
-                status: QueryStatus::Rejected,
-                reason: Some(error.to_string()),
+                result: serde_json::json!({
+                    "error": error.to_string()
+                }),
             },
         }
     }

@@ -6,8 +6,8 @@
 use async_trait::async_trait;
 use std::sync::Arc;
 use cim_domain::{
-    AggregateRoot,
-    cqrs::{Command, CommandEnvelope, CommandHandler, CommandAcknowledgment, CommandStatus},
+    AggregateRoot, EntityId,
+    Command, CommandEnvelope, CommandHandler, CommandAcknowledgment, CommandStatus,
 };
 use crate::{
     GraphId, NodeId, EdgeId,
@@ -67,7 +67,7 @@ impl GraphCommandHandlerImpl {
     async fn process_graph_command(
         &self,
         command: GraphCommand,
-        envelope: &CommandEnvelope<GraphCommand>,
+        _envelope: &CommandEnvelope<GraphCommand>,
     ) -> GraphCommandResult<Vec<GraphDomainEvent>> {
         match command {
             GraphCommand::CreateGraph { name, description, metadata } => {
@@ -228,7 +228,7 @@ impl GraphCommandHandlerImpl {
 impl Command for GraphCommand {
     type Aggregate = Graph;
     
-    fn aggregate_id(&self) -> Option<cim_domain::entity::EntityId<Self::Aggregate>> {
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
         None // Graph commands don't have a pre-existing aggregate ID for creation
     }
 }
