@@ -92,6 +92,7 @@ impl GraphCommandHandlerImpl {
                     graph_id,
                     name,
                     description,
+                    graph_type: None,
                     metadata,
                     created_at,
                 });
@@ -119,6 +120,7 @@ impl GraphCommandHandlerImpl {
                 let event = GraphDomainEvent::NodeAdded(NodeAdded {
                     graph_id,
                     node_id,
+                    position: crate::value_objects::Position3D::default(),
                     node_type,
                     metadata,
                 });
@@ -168,6 +170,7 @@ impl GraphCommandHandlerImpl {
                 let add_event = GraphDomainEvent::NodeAdded(NodeAdded {
                     graph_id,
                     node_id,
+                    position: crate::value_objects::Position3D::default(),
                     node_type: old_node.node_type,
                     metadata: new_metadata,
                 });
@@ -195,8 +198,8 @@ impl GraphCommandHandlerImpl {
                 let event = GraphDomainEvent::EdgeAdded(EdgeAdded {
                     graph_id,
                     edge_id,
-                    source_id,
-                    target_id,
+                    source: source_id,
+                    target: target_id,
                     edge_type,
                     metadata,
                 });

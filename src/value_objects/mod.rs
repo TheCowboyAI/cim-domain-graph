@@ -168,7 +168,7 @@ impl Default for Position2D {
 }
 
 /// Represents the position of a node in 3D space
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(bevy_ecs::component::Component, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Position3D {
     pub x: f64,
     pub y: f64,

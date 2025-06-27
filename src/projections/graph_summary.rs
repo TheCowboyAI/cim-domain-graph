@@ -116,6 +116,7 @@ impl super::GraphProjection for GraphSummaryProjection {
                 description,
                 metadata,
                 created_at,
+                ..
             }) => {
                 let summary = GraphSummary {
                     graph_id,
@@ -183,6 +184,7 @@ mod tests {
             graph_id,
             name: "Test Graph".to_string(),
             description: "A test graph".to_string(),
+            graph_type: None,
             metadata: HashMap::new(),
             created_at: Utc::now(),
         });
@@ -199,6 +201,7 @@ mod tests {
         let node_event = GraphDomainEvent::NodeAdded(NodeAdded {
             graph_id,
             node_id: NodeId::new(),
+            position: crate::value_objects::Position3D::default(),
             node_type: "TestNode".to_string(),
             metadata: HashMap::new(),
         });

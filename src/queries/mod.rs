@@ -788,6 +788,7 @@ mod tests {
             graph_id,
             name: "Test Graph".to_string(),
             description: "A test graph for queries".to_string(),
+            graph_type: None,
             metadata: std::collections::HashMap::new(),
             created_at: now,
         });
@@ -801,6 +802,7 @@ mod tests {
         let node_event = GraphDomainEvent::NodeAdded(NodeAdded {
             graph_id,
             node_id,
+            position: crate::value_objects::Position3D::default(),
             node_type: "TestType".to_string(),
             metadata: node_metadata,
         });
@@ -878,6 +880,7 @@ mod tests {
             graph_id: graph1_id,
             name: "Early Graph".to_string(),
             description: "Created in the past".to_string(),
+            graph_type: None,
             metadata: std::collections::HashMap::new(),
             created_at: past,
         });
@@ -886,6 +889,7 @@ mod tests {
             graph_id: graph2_id,
             name: "Recent Graph".to_string(),
             description: "Created more recently".to_string(),
+            graph_type: None,
             metadata: std::collections::HashMap::new(),
             created_at: now,
         });
@@ -939,6 +943,7 @@ mod tests {
                 graph_id,
                 name: format!("Graph {}", i),
                 description: format!("Test graph number {}", i),
+                graph_type: None,
                 metadata: std::collections::HashMap::new(),
                 created_at: Utc::now(),
             });

@@ -151,6 +151,7 @@ impl super::GraphProjection for NodeListProjection {
                 node_id,
                 node_type,
                 metadata,
+                ..
             }) => {
                 // Extract name from metadata if present
                 let name = metadata
@@ -228,6 +229,7 @@ mod tests {
         let add_event = GraphDomainEvent::NodeAdded(NodeAdded {
             graph_id,
             node_id,
+            position: crate::value_objects::Position3D::default(),
             node_type: "TestType".to_string(),
             metadata,
         });
@@ -262,6 +264,7 @@ mod tests {
         let add_event = GraphDomainEvent::NodeAdded(NodeAdded {
             graph_id,
             node_id,
+            position: crate::value_objects::Position3D::default(),
             node_type: "TestType".to_string(),
             metadata: HashMap::new(),
         });

@@ -5,11 +5,15 @@
 //! domain, but can be composed into graphs through it.
 
 pub mod aggregate;
+pub mod bridge;
 pub mod commands;
+pub mod components;
 pub mod events;
 pub mod handlers;
+pub mod plugin;
 pub mod projections;
 pub mod queries;
+pub mod systems;
 pub mod value_objects;
 pub mod domain_events;
 pub mod abstraction;

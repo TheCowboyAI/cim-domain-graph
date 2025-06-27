@@ -53,6 +53,14 @@ indexmap = "2.7"
 # Graph library
 petgraph = { version = "0.6", features = ["serde-1"] }
 
+# ECS
+bevy_ecs = "0.16"
+bevy_app = "0.16"
+
+# Async-Sync Bridge
+crossbeam = "0.8"
+parking_lot = "0.12"
+
 [dev-dependencies]
 tokio-test = "0.4"
 criterion = "0.5"

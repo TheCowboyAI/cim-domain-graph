@@ -107,6 +107,7 @@ impl AbstractGraph {
                 let event = NodeAdded {
                     graph_id,
                     node_id,
+                    position: crate::value_objects::Position3D::default(),
                     node_type,
                     metadata,
                 };
@@ -148,8 +149,8 @@ impl AbstractGraph {
                 let event = EdgeAdded {
                     graph_id,
                     edge_id,
-                    source_id,
-                    target_id,
+                    source: source_id,
+                    target: target_id,
                     edge_type,
                     metadata,
                 };
@@ -188,6 +189,7 @@ impl AbstractGraph {
                 let node_added = NodeAdded {
                     graph_id,
                     node_id,
+                    position: crate::value_objects::Position3D::default(),
                     node_type: current_node.node_type,
                     metadata: new_metadata,
                 };
