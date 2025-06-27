@@ -12,11 +12,20 @@ pub mod projections;
 pub mod queries;
 pub mod value_objects;
 pub mod domain_events;
+pub mod abstraction;
 
 // Re-export main types
 pub use aggregate::*;
 pub use events::*;
 pub use domain_events::*;
+
+// Re-export abstraction types
+pub use abstraction::{
+    GraphImplementation, GraphType, GraphMetadata,
+    GraphOperationError, GraphResult,
+    NodeData, EdgeData,
+    ContextGraphAdapter, ConceptGraphAdapter, WorkflowGraphAdapter, IpldGraphAdapter,
+};
 
 // Re-export commands and their types
 pub use commands::{

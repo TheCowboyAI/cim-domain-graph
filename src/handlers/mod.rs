@@ -3,6 +3,8 @@
 //! Command handlers process graph commands, validate business rules, and emit events.
 //! They serve as the bridge between commands and the domain aggregate.
 
+pub mod abstract_handler;
+
 use async_trait::async_trait;
 use std::sync::Arc;
 use cim_domain::{

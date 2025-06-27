@@ -67,6 +67,12 @@ impl fmt::Display for NodeType {
     }
 }
 
+impl Default for NodeType {
+    fn default() -> Self {
+        NodeType::Task
+    }
+}
+
 /// Represents different types of edges in a graph
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum EdgeType {
@@ -125,6 +131,12 @@ impl EdgeType {
 impl fmt::Display for EdgeType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_str())
+    }
+}
+
+impl Default for EdgeType {
+    fn default() -> Self {
+        EdgeType::Sequence
     }
 }
 

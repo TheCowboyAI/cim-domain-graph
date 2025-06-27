@@ -289,7 +289,7 @@ impl Query for EdgeQuery {}
 // Implement QueryHandler for GraphQuery
 impl QueryHandler<GraphQuery> for GraphQueryHandlerImpl {
     fn handle(&self, envelope: QueryEnvelope<GraphQuery>) -> QueryResponse {
-        let query_id = envelope.id;
+        let _query_id = envelope.id;
         let correlation_id = envelope.correlation_id().clone();
         
         // Process the query synchronously (blocking on async)
@@ -343,7 +343,7 @@ impl QueryHandler<GraphQuery> for GraphQueryHandlerImpl {
 // Implement QueryHandler for NodeQuery
 impl QueryHandler<NodeQuery> for GraphQueryHandlerImpl {
     fn handle(&self, envelope: QueryEnvelope<NodeQuery>) -> QueryResponse {
-        let query_id = envelope.id;
+        let _query_id = envelope.id;
         let correlation_id = envelope.correlation_id().clone();
         
         // Process the query synchronously (blocking on async)
@@ -868,7 +868,7 @@ mod tests {
         
         let now = Utc::now();
         let past = now - Duration::days(1);
-        let future = now + Duration::days(1);
+        let _future = now + Duration::days(1);
         
         // Add two test graphs with different creation times
         let graph1_id = GraphId::new();
