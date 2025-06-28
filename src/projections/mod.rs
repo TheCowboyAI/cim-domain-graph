@@ -2,9 +2,11 @@
 
 // TODO: Move graph projections from cim-domain
 
+pub mod edge_list;
 pub mod graph_summary;
 pub mod node_list;
 
+pub use edge_list::*;
 pub use graph_summary::*;
 pub use node_list::*;
 
