@@ -21,6 +21,16 @@ impl Color {
     pub const RED: Self = Self { r: 1.0, g: 0.0, b: 0.0, a: 1.0 };
     pub const GREEN: Self = Self { r: 0.0, g: 1.0, b: 0.0, a: 1.0 };
     pub const BLUE: Self = Self { r: 0.0, g: 0.0, b: 1.0, a: 1.0 };
+
+    /// Create a new color from RGB values
+    pub fn rgb(r: f32, g: f32, b: f32) -> Self {
+        Self { r, g, b, a: 1.0 }
+    }
+    
+    /// Create a new color from RGBA values
+    pub fn rgba(r: f32, g: f32, b: f32, a: f32) -> Self {
+        Self { r, g, b, a }
+    }
 }
 
 impl Default for Color {
@@ -35,6 +45,13 @@ pub struct Size {
     pub width: f32,
     pub height: f32,
     pub depth: f32,
+}
+
+impl Size {
+    /// Create a new size
+    pub fn new(width: f32, height: f32, depth: f32) -> Self {
+        Self { width, height, depth }
+    }
 }
 
 impl Default for Size {

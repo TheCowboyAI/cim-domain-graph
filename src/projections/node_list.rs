@@ -3,13 +3,13 @@
 //! Provides a searchable list of all nodes across graphs.
 
 use crate::{
-    domain_events::{GraphDomainEvent},
+    domain_events::GraphDomainEvent,
     events::{NodeAdded, NodeRemoved},
     GraphId, NodeId,
 };
+use async_trait::async_trait;
 use cim_domain::projections::{EventSequence, Projection};
 use cim_domain::DomainEventEnum;
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -68,11 +68,7 @@ impl NodeListProjection {
     pub fn get_nodes_by_graph(&self, graph_id: &GraphId) -> Vec<&NodeInfo> {
         self.nodes_by_graph
             .get(graph_id)
-            .map(|ids| {
-                ids.iter()
-                    .filter_map(|id| self.nodes.get(id))
-                    .collect()
-            })
+            .map(|ids| ids.iter().filter_map(|id| self.nodes.get(id)).collect())
             .unwrap_or_default()
     }
 
@@ -80,11 +76,7 @@ impl NodeListProjection {
     pub fn get_nodes_by_type(&self, node_type: &str) -> Vec<&NodeInfo> {
         self.nodes_by_type
             .get(node_type)
-            .map(|ids| {
-                ids.iter()
-                    .filter_map(|id| self.nodes.get(id))
-                    .collect()
-            })
+            .map(|ids| ids.iter().filter_map(|id| self.nodes.get(id)).collect())
             .unwrap_or_default()
     }
 
@@ -105,6 +97,14 @@ impl NodeListProjection {
     /// Get total number of nodes
     pub fn total_nodes(&self) -> usize {
         self.nodes.len()
+    }
+
+    /// Get node count for a specific graph
+    pub fn get_node_count_for_graph(&self, graph_id: &GraphId) -> usize {
+        self.nodes_by_graph
+            .get(graph_id)
+            .map(|ids| ids.len())
+            .unwrap_or(0)
     }
 
     /// Get node count by type
@@ -198,8 +198,6 @@ impl super::GraphProjection for NodeListProjection {
                 }
             }
 
-
-
             _ => {
                 // Ignore other graph events
             }
@@ -208,8 +206,6 @@ impl super::GraphProjection for NodeListProjection {
         Ok(())
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -224,7 +220,10 @@ mod tests {
 
         // Add a node
         let mut metadata = HashMap::new();
-        metadata.insert("name".to_string(), serde_json::Value::String("Test Node".to_string()));
+        metadata.insert(
+            "name".to_string(),
+            serde_json::Value::String("Test Node".to_string()),
+        );
 
         let add_event = GraphDomainEvent::NodeAdded(NodeAdded {
             graph_id,
@@ -273,10 +272,7 @@ mod tests {
         assert_eq!(projection.total_nodes(), 1);
 
         // Remove the node
-        let remove_event = GraphDomainEvent::NodeRemoved(NodeRemoved {
-            graph_id,
-            node_id,
-        });
+        let remove_event = GraphDomainEvent::NodeRemoved(NodeRemoved { graph_id, node_id });
 
         projection.handle_graph_event(remove_event).await.unwrap();
         assert_eq!(projection.total_nodes(), 0);

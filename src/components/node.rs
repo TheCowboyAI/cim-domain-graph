@@ -12,28 +12,36 @@ pub struct NodeEntity {
     pub graph_id: GraphId,
 }
 
-/// Types of nodes
+/// Node types
 #[derive(Component, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum NodeType {
+    /// Start node
+    Start,
+    /// End node
+    End,
+    /// Process node
+    Process,
+    /// Decision node
+    Decision,
+    /// Data node
+    Data,
+    /// Event node
+    Event,
+    /// Gateway node
+    Gateway,
     /// Workflow step
-    WorkflowStep { step_type: String },
-    /// Decision point
-    Decision { criteria: String },
-    /// Integration point
-    Integration { system: String },
-    /// Concept in knowledge graph
-    Concept { category: String },
-    /// Event in event flow
-    Event { event_type: String },
-    /// Feature in development graph
-    Feature { status: String },
-    /// General purpose node
-    General,
+    WorkflowStep {
+        step_type: String,
+    },
+    /// Concept
+    Concept {
+        category: String,
+    },
 }
 
 impl Default for NodeType {
     fn default() -> Self {
-        Self::General
+        Self::Process
     }
 }
 

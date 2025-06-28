@@ -1,5 +1,5 @@
-//! Graph events
+//! Graph domain events
 
-pub mod graph_events;
+mod graph_events;
 
 pub use graph_events::*;

@@ -19,6 +19,13 @@ pub struct WorkflowGraphAdapter {
     step_to_node: HashMap<StepId, NodeId>,
     // Map EdgeId to dependency relationships
     edge_map: HashMap<EdgeId, (StepId, StepId)>,
+    // Store original metadata to preserve it
+    node_metadata: HashMap<NodeId, HashMap<String, serde_json::Value>>,
+    edge_metadata: HashMap<EdgeId, HashMap<String, serde_json::Value>>,
+    // Store original positions
+    node_positions: HashMap<NodeId, Position3D>,
+    // Store original edge types
+    edge_types: HashMap<EdgeId, String>,
 }
 
 impl WorkflowGraphAdapter {
@@ -33,6 +40,10 @@ impl WorkflowGraphAdapter {
             node_to_step: HashMap::new(),
             step_to_node: HashMap::new(),
             edge_map: HashMap::new(),
+            node_metadata: HashMap::new(),
+            edge_metadata: HashMap::new(),
+            node_positions: HashMap::new(),
+            edge_types: HashMap::new(),
         }
     }
 }
@@ -43,6 +54,10 @@ impl GraphImplementation for WorkflowGraphAdapter {
     }
     
     fn add_node(&mut self, node_id: NodeId, data: NodeData) -> GraphResult<()> {
+        // Store original metadata and position
+        self.node_metadata.insert(node_id, data.metadata.clone());
+        self.node_positions.insert(node_id, data.position.clone());
+        
         // Convert node type to StepType
         let step_type = match data.node_type.as_str() {
             "manual" => StepType::Manual,
@@ -98,7 +113,11 @@ impl GraphImplementation for WorkflowGraphAdapter {
         Ok(())
     }
     
-    fn add_edge(&mut self, edge_id: EdgeId, source: NodeId, target: NodeId, _data: EdgeData) -> GraphResult<()> {
+    fn add_edge(&mut self, edge_id: EdgeId, source: NodeId, target: NodeId, data: EdgeData) -> GraphResult<()> {
+        // Store original metadata and edge type
+        self.edge_metadata.insert(edge_id, data.metadata.clone());
+        self.edge_types.insert(edge_id, data.edge_type.clone());
+        
         let source_step = self.node_to_step.get(&source)
             .ok_or_else(|| GraphOperationError::NodeNotFound(source))?;
         let target_step = self.node_to_step.get(&target)
@@ -118,7 +137,12 @@ impl GraphImplementation for WorkflowGraphAdapter {
         let step = self.graph.workflow.steps.get(step_id)
             .ok_or_else(|| GraphOperationError::NodeNotFound(node_id))?;
         
-        let mut metadata = HashMap::new();
+        // Start with original metadata if available
+        let mut metadata = self.node_metadata.get(&node_id)
+            .cloned()
+            .unwrap_or_default();
+        
+        // Override/add workflow-specific fields
         metadata.insert("name".to_string(), serde_json::Value::String(step.name.clone()));
         metadata.insert("description".to_string(), serde_json::Value::String(step.description.clone()));
         metadata.insert("status".to_string(), serde_json::Value::String(format!("{:?}", step.status)));
@@ -132,6 +156,11 @@ impl GraphImplementation for WorkflowGraphAdapter {
             metadata.insert("assigned_to".to_string(), serde_json::Value::String(assigned.clone()));
         }
         
+        // Get original position or default
+        let position = self.node_positions.get(&node_id)
+            .cloned()
+            .unwrap_or_default();
+        
         Ok(NodeData {
             node_type: match &step.step_type {
                 StepType::Manual => "manual".to_string(),
@@ -142,7 +171,7 @@ impl GraphImplementation for WorkflowGraphAdapter {
                 StepType::Parallel => "parallel".to_string(),
                 StepType::Custom(name) => name.clone(),
             },
-            position: Position3D::default(), // WorkflowGraph doesn't store positions
+            position,
             metadata,
         })
     }
@@ -156,10 +185,20 @@ impl GraphImplementation for WorkflowGraphAdapter {
         let target_node = self.step_to_node.get(target_step)
             .ok_or_else(|| GraphOperationError::NodeNotFound(NodeId::new()))?;
         
+        // Get original metadata or empty
+        let metadata = self.edge_metadata.get(&edge_id)
+            .cloned()
+            .unwrap_or_default();
+        
+        // Get original edge type or default to "dependency"
+        let edge_type = self.edge_types.get(&edge_id)
+            .cloned()
+            .unwrap_or_else(|| "dependency".to_string());
+        
         Ok((
             EdgeData {
-                edge_type: "dependency".to_string(),
-                metadata: HashMap::new(),
+                edge_type,
+                metadata,
             },
             *source_node,
             *target_node,
@@ -170,7 +209,12 @@ impl GraphImplementation for WorkflowGraphAdapter {
         self.graph.workflow.steps.iter()
             .filter_map(|(step_id, step)| {
                 self.step_to_node.get(step_id).map(|node_id| {
-                    let mut metadata = HashMap::new();
+                    // Start with original metadata if available
+                    let mut metadata = self.node_metadata.get(node_id)
+                        .cloned()
+                        .unwrap_or_default();
+                    
+                    // Override/add workflow-specific fields
                     metadata.insert("name".to_string(), serde_json::Value::String(step.name.clone()));
                     metadata.insert("description".to_string(), serde_json::Value::String(step.description.clone()));
                     metadata.insert("status".to_string(), serde_json::Value::String(format!("{:?}", step.status)));
@@ -184,6 +228,11 @@ impl GraphImplementation for WorkflowGraphAdapter {
                         metadata.insert("assigned_to".to_string(), serde_json::Value::String(assigned.clone()));
                     }
                     
+                    // Get original position or default
+                    let position = self.node_positions.get(node_id)
+                        .cloned()
+                        .unwrap_or_default();
+                    
                     (*node_id, NodeData {
                         node_type: match &step.step_type {
                             StepType::Manual => "manual".to_string(),
@@ -194,7 +243,7 @@ impl GraphImplementation for WorkflowGraphAdapter {
                             StepType::Parallel => "parallel".to_string(),
                             StepType::Custom(name) => name.clone(),
                         },
-                        position: Position3D::default(),
+                        position,
                         metadata,
                     })
                 })
@@ -208,11 +257,21 @@ impl GraphImplementation for WorkflowGraphAdapter {
                 let source_node = self.step_to_node.get(source_step)?;
                 let target_node = self.step_to_node.get(target_step)?;
                 
+                // Get original metadata or empty
+                let metadata = self.edge_metadata.get(edge_id)
+                    .cloned()
+                    .unwrap_or_default();
+                
+                // Get original edge type or default to "dependency"
+                let edge_type = self.edge_types.get(edge_id)
+                    .cloned()
+                    .unwrap_or_else(|| "dependency".to_string());
+                
                 Some((
                     *edge_id,
                     EdgeData {
-                        edge_type: "dependency".to_string(),
-                        metadata: HashMap::new(),
+                        edge_type,
+                        metadata,
                     },
                     *source_node,
                     *target_node,

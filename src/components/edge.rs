@@ -14,45 +14,79 @@ pub struct EdgeEntity {
     pub target: NodeId,
 }
 
-/// Types of edges
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+/// Edge type
+#[derive(Component, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum EdgeType {
-    /// Sequential flow
-    Sequence,
-    /// Conditional flow
-    Conditional { condition: String },
-    /// Parallel flow
-    Parallel,
-    /// Similarity relationship
-    Similarity,
-    /// Hierarchical relationship
-    Hierarchy,
-    /// Association
-    Association { relation_type: String },
-    /// Dependency
-    Dependency,
-    /// General purpose edge
-    General,
+    /// Directed edge (one-way)
+    Directed,
+    /// Undirected edge (two-way)
+    Undirected,
+    /// Bidirectional edge (explicitly two-way)
+    Bidirectional,
+    /// Workflow edge
+    Workflow {
+        condition: Option<String>,
+    },
+    /// Data flow edge
+    DataFlow {
+        data_type: String,
+    },
+    /// Control flow edge
+    ControlFlow,
 }
 
-impl Default for EdgeType {
-    fn default() -> Self {
-        Self::General
+/// Edge relationship types
+#[derive(Component, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum EdgeRelationship {
+    /// Dependency relationship
+    Dependency {
+        dependency_type: String,
+        strength: f32,
+    },
+    /// Similarity relationship
+    Similarity {
+        score: f32,
+    },
+    /// Hierarchical relationship
+    Hierarchy {
+        parent_to_child: bool,
+    },
+    /// Association relationship
+    Association {
+        association_type: String,
+    },
+    /// Flow relationship
+    Flow {
+        flow_type: String,
+        capacity: Option<f32>,
+    },
+}
+
+impl EdgeRelationship {
+    /// Get the weight associated with this relationship
+    pub fn weight(&self) -> Option<f32> {
+        match self {
+            Self::Dependency { strength, .. } => Some(*strength),
+            Self::Similarity { score } => Some(*score),
+            Self::Hierarchy { .. } => Some(1.0),
+            Self::Association { .. } => Some(1.0),
+            Self::Flow { .. } => Some(1.0),
+        }
     }
 }
 
-/// Edge relationship details
+/// Edge relationship details (deprecated - use EdgeRelationship directly)
 #[derive(Component, Debug, Clone, Serialize, Deserialize)]
-pub struct EdgeRelationship {
+pub struct EdgeRelationshipOld {
     pub edge_type: EdgeType,
     pub label: String,
     pub bidirectional: bool,
 }
 
-impl Default for EdgeRelationship {
+impl Default for EdgeRelationshipOld {
     fn default() -> Self {
         Self {
-            edge_type: EdgeType::default(),
+            edge_type: EdgeType::Directed,
             label: String::new(),
             bidirectional: false,
         }
@@ -60,9 +94,10 @@ impl Default for EdgeRelationship {
 }
 
 /// Edge metadata
-#[derive(Component, Debug, Clone, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone)]
 pub struct EdgeMetadata {
-    pub properties: HashMap<String, serde_json::Value>,
+    pub tags: Vec<String>,
+    pub properties: std::collections::HashMap<String, serde_json::Value>,
     pub created_at: std::time::SystemTime,
     pub updated_at: std::time::SystemTime,
 }
@@ -71,6 +106,7 @@ impl Default for EdgeMetadata {
     fn default() -> Self {
         let now = std::time::SystemTime::now();
         Self {
+            tags: Vec::new(),
             properties: HashMap::new(),
             created_at: now,
             updated_at: now,
@@ -78,15 +114,13 @@ impl Default for EdgeMetadata {
     }
 }
 
-/// Edge weight for algorithms
-#[derive(Component, Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub struct EdgeWeight {
-    pub value: f32,
-}
+/// Edge weight
+#[derive(Component, Debug, Clone, PartialEq)]
+pub struct EdgeWeight(pub f32);
 
 impl Default for EdgeWeight {
     fn default() -> Self {
-        Self { value: 1.0 }
+        Self(1.0)
     }
 }
 
@@ -106,5 +140,39 @@ pub enum EdgeDirection {
 impl Default for EdgeDirection {
     fn default() -> Self {
         Self::Forward
+    }
+}
+
+/// Edge style for rendering
+#[derive(Component, Debug, Clone, PartialEq)]
+pub enum EdgeStyle {
+    Solid,
+    Dashed,
+    Dotted,
+}
+
+impl Default for EdgeStyle {
+    fn default() -> Self {
+        Self::Solid
+    }
+}
+
+/// Edge color
+#[derive(Component, Debug, Clone, PartialEq)]
+pub struct EdgeColor {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub a: f32,
+}
+
+impl Default for EdgeColor {
+    fn default() -> Self {
+        Self {
+            r: 0.5,
+            g: 0.5,
+            b: 0.5,
+            a: 1.0,
+        }
     }
 } 

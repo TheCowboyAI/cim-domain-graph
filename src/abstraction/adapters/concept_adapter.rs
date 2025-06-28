@@ -20,6 +20,11 @@ pub struct ConceptGraphAdapter {
     // Map domain EdgeId to ConceptGraph's internal EdgeId
     edge_id_map: HashMap<EdgeId, ContextEdgeId>,
     reverse_edge_map: HashMap<ContextEdgeId, EdgeId>,
+    // Store original metadata to preserve it
+    node_metadata: HashMap<NodeId, HashMap<String, serde_json::Value>>,
+    edge_metadata: HashMap<EdgeId, HashMap<String, serde_json::Value>>,
+    // Store original node types
+    node_types: HashMap<NodeId, String>,
 }
 
 impl ConceptGraphAdapter {
@@ -32,6 +37,9 @@ impl ConceptGraphAdapter {
             reverse_node_map: HashMap::new(),
             edge_id_map: HashMap::new(),
             reverse_edge_map: HashMap::new(),
+            node_metadata: HashMap::new(),
+            edge_metadata: HashMap::new(),
+            node_types: HashMap::new(),
         }
     }
 }
@@ -42,6 +50,10 @@ impl GraphImplementation for ConceptGraphAdapter {
     }
     
     fn add_node(&mut self, node_id: NodeId, data: NodeData) -> GraphResult<()> {
+        // Store original metadata and type
+        self.node_metadata.insert(node_id, data.metadata.clone());
+        self.node_types.insert(node_id, data.node_type.clone());
+        
         // Create a ConceptNode from NodeData
         let concept_id = ConceptId::new();
         let position = ConceptualPoint {
@@ -67,6 +79,9 @@ impl GraphImplementation for ConceptGraphAdapter {
     }
     
     fn add_edge(&mut self, edge_id: EdgeId, source: NodeId, target: NodeId, data: EdgeData) -> GraphResult<()> {
+        // Store original metadata
+        self.edge_metadata.insert(edge_id, data.metadata.clone());
+        
         let source_ctx = self.node_id_map.get(&source)
             .ok_or_else(|| GraphOperationError::NodeNotFound(source))?;
         let target_ctx = self.node_id_map.get(&target)
@@ -110,12 +125,29 @@ impl GraphImplementation for ConceptGraphAdapter {
             z: node.position.coordinates.get(2).copied().unwrap_or(0.0) as f64,
         };
         
-        let mut metadata = node.metadata.clone();
+        // Start with original metadata if available
+        let mut metadata = self.node_metadata.get(&node_id)
+            .cloned()
+            .unwrap_or_else(|| node.metadata.clone());
+        
+        // Add/override concept-specific fields
         metadata.insert("label".to_string(), serde_json::Value::String(node.label.clone()));
         metadata.insert("concept_id".to_string(), serde_json::Value::String(format!("{:?}", node.concept_id)));
         
+        // Merge any additional metadata from the concept node
+        for (key, value) in node.metadata {
+            if !metadata.contains_key(&key) {
+                metadata.insert(key, value);
+            }
+        }
+        
+        // Get original node type or default to "concept"
+        let node_type = self.node_types.get(&node_id)
+            .cloned()
+            .unwrap_or_else(|| "concept".to_string());
+        
         Ok(NodeData {
-            node_type: "concept".to_string(),
+            node_type,
             position,
             metadata,
         })
@@ -137,8 +169,20 @@ impl GraphImplementation for ConceptGraphAdapter {
         let target = self.reverse_node_map.get(&target_ctx)
             .ok_or_else(|| GraphOperationError::NodeNotFound(NodeId::new()))?;
         
-        let mut metadata = edge.properties.clone();
+        // Start with original metadata if available
+        let mut metadata = self.edge_metadata.get(&edge_id)
+            .cloned()
+            .unwrap_or_else(|| edge.properties.clone());
+        
+        // Add/override concept-specific fields
         metadata.insert("strength".to_string(), serde_json::Value::from(edge.strength as f64));
+        
+        // Merge any additional properties from the edge
+        for (key, value) in edge.properties {
+            if !metadata.contains_key(&key) {
+                metadata.insert(key, value);
+            }
+        }
         
         Ok((
             EdgeData {
@@ -160,12 +204,22 @@ impl GraphImplementation for ConceptGraphAdapter {
                         z: node.position.coordinates.get(2).copied().unwrap_or(0.0) as f64,
                     };
                     
-                    let mut metadata = node.metadata.clone();
+                    // Start with original metadata if available
+                    let mut metadata = self.node_metadata.get(domain_id)
+                        .cloned()
+                        .unwrap_or_else(|| node.metadata.clone());
+                    
+                    // Add/override concept-specific fields
                     metadata.insert("label".to_string(), serde_json::Value::String(node.label.clone()));
                     metadata.insert("concept_id".to_string(), serde_json::Value::String(format!("{:?}", node.concept_id)));
                     
+                    // Get original node type or default to "concept"
+                    let node_type = self.node_types.get(domain_id)
+                        .cloned()
+                        .unwrap_or_else(|| "concept".to_string());
+                    
                     (*domain_id, NodeData {
-                        node_type: "concept".to_string(),
+                        node_type,
                         position,
                         metadata,
                     })
@@ -183,7 +237,12 @@ impl GraphImplementation for ConceptGraphAdapter {
                     let source = self.reverse_node_map.get(&source_ctx)?;
                     let target = self.reverse_node_map.get(&target_ctx)?;
                     
-                    let mut metadata = edge.properties.clone();
+                    // Start with original metadata if available
+                    let mut metadata = self.edge_metadata.get(edge_id)
+                        .cloned()
+                        .unwrap_or_else(|| edge.properties.clone());
+                    
+                    // Add/override concept-specific fields
                     metadata.insert("strength".to_string(), serde_json::Value::from(edge.strength as f64));
                     
                     Some((
@@ -217,7 +276,16 @@ impl GraphImplementation for ConceptGraphAdapter {
         if node_type == "concept" {
             self.node_id_map.keys().copied().collect()
         } else {
-            Vec::new()
+            // Check stored node types
+            self.node_types.iter()
+                .filter_map(|(node_id, stored_type)| {
+                    if stored_type == node_type {
+                        Some(*node_id)
+                    } else {
+                        None
+                    }
+                })
+                .collect()
         }
     }
     

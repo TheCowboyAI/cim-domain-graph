@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use std::collections::HashMap;
 use crate::value_objects::Position3D;
+use crate::components::EdgeRelationship;
 
 // Re-export identifiers that will be moved here eventually
 pub use cim_domain::{NodeId, EdgeId};
@@ -77,8 +78,6 @@ pub struct NodeRemoved {
     pub node_id: NodeId,
 }
 
-
-
 /// Edge added event
 #[derive(Event, Debug, Clone, Serialize, Deserialize)]
 pub struct EdgeAdded {
@@ -90,6 +89,8 @@ pub struct EdgeAdded {
     pub source: NodeId,
     /// The target node of the edge
     pub target: NodeId,
+    /// The relationship between nodes
+    pub relationship: EdgeRelationship,
     /// The type of edge (e.g., "sequence", "conditional", "parallel")
     pub edge_type: String,
     /// Additional metadata about the edge
@@ -101,6 +102,7 @@ pub struct EdgeAdded {
 pub struct EdgeUpdated {
     pub graph_id: GraphId,
     pub edge_id: EdgeId,
+    pub relationship: Option<EdgeRelationship>,
     pub metadata: HashMap<String, serde_json::Value>,
 }
 
@@ -197,8 +199,6 @@ impl DomainEvent for NodeRemoved {
         "graphs.node.removed.v1".to_string()
     }
 }
-
-
 
 impl DomainEvent for EdgeAdded {
     fn aggregate_id(&self) -> Uuid {

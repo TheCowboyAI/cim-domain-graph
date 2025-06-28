@@ -2,12 +2,12 @@
 //!
 //! This plugin integrates the graph domain with Bevy ECS.
 
-use bevy_ecs::prelude::*;
 use bevy_app::{App, Plugin, Update};
+use bevy_ecs::prelude::*;
 use std::sync::Arc;
 
 use crate::{
-    bridge::{GraphBridge, BridgeEvent},
+    bridge::{BridgeEvent, GraphBridge},
     events::*,
     systems::*,
 };
@@ -35,7 +35,7 @@ impl Plugin for GraphDomainPlugin {
         // Create and insert the bridge
         let bridge = Arc::new(GraphBridge::new(self.runtime_handle.clone()));
         app.insert_resource(GraphBridgeResource { bridge });
-        
+
         // Register events
         app.add_event::<GraphCreated>()
             .add_event::<GraphUpdated>()
@@ -46,7 +46,7 @@ impl Plugin for GraphDomainPlugin {
             .add_event::<EdgeAdded>()
             .add_event::<EdgeUpdated>()
             .add_event::<EdgeRemoved>();
-        
+
         // Add systems
         app.add_systems(
             Update,
@@ -62,14 +62,14 @@ impl Plugin for GraphDomainPlugin {
                 update_node_system,
                 remove_node_system,
                 // Edge management systems
-                connect_nodes_system,
+                add_edge_system,
                 update_edge_system,
-                disconnect_nodes_system,
+                remove_edge_system,
             )
                 .chain()
                 .in_set(GraphSystemSet),
         );
-        
+
         // Add system sets
         app.configure_sets(Update, GraphSystemSet);
     }
@@ -93,18 +93,36 @@ fn poll_graph_events(
     mut edge_removed: EventWriter<EdgeRemoved>,
 ) {
     let events = bridge.bridge.receive_events();
-    
+
     for event in events {
         match event {
-            BridgeEvent::GraphCreated(e) => { graph_created.write(e); },
-            BridgeEvent::GraphUpdated(e) => { graph_updated.write(e); },
-            BridgeEvent::GraphArchived(e) => { graph_archived.write(e); },
-            BridgeEvent::NodeAdded(e) => { node_added.write(e); },
-            BridgeEvent::NodeUpdated(e) => { node_updated.write(e); },
-            BridgeEvent::NodeRemoved(e) => { node_removed.write(e); },
-            BridgeEvent::EdgeAdded(e) => { edge_added.write(e); },
-            BridgeEvent::EdgeUpdated(e) => { edge_updated.write(e); },
-            BridgeEvent::EdgeRemoved(e) => { edge_removed.write(e); },
+            BridgeEvent::GraphCreated(e) => {
+                graph_created.write(e);
+            }
+            BridgeEvent::GraphUpdated(e) => {
+                graph_updated.write(e);
+            }
+            BridgeEvent::GraphArchived(e) => {
+                graph_archived.write(e);
+            }
+            BridgeEvent::NodeAdded(e) => {
+                node_added.write(e);
+            }
+            BridgeEvent::NodeUpdated(e) => {
+                node_updated.write(e);
+            }
+            BridgeEvent::NodeRemoved(e) => {
+                node_removed.write(e);
+            }
+            BridgeEvent::EdgeAdded(e) => {
+                edge_added.write(e);
+            }
+            BridgeEvent::EdgeUpdated(e) => {
+                edge_updated.write(e);
+            }
+            BridgeEvent::EdgeRemoved(e) => {
+                edge_removed.write(e);
+            }
         }
     }
 }
@@ -124,17 +142,17 @@ impl GraphDomainExt for App {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_plugin_creation() {
         let runtime = tokio::runtime::Handle::current();
         let plugin = GraphDomainPlugin::new(runtime);
-        
+
         // Plugin should be created successfully
         let mut app = App::new();
         app.add_plugins(plugin);
-        
+
         // Verify resources were added
         assert!(app.world().contains_resource::<GraphBridgeResource>());
     }
-} 
+}

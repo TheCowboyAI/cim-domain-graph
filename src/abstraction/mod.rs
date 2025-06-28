@@ -6,6 +6,15 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub mod adapters;
+pub mod transformations;
+pub mod composition;
+pub mod integration;
+
+#[cfg(test)]
+mod transformations_test;
+
+#[cfg(test)]
+mod composition_test;
 
 // Re-export Position3D for convenience
 pub use crate::value_objects::Position3D;
@@ -13,6 +22,24 @@ pub use crate::value_objects::Position3D;
 // Re-export adapters for convenience
 pub use adapters::{
     ContextGraphAdapter, ConceptGraphAdapter, WorkflowGraphAdapter, IpldGraphAdapter,
+};
+
+// Re-export transformations for convenience
+pub use transformations::{
+    DefaultGraphTransformer, GraphTransformer, TransformationError, TransformationOptions,
+    TransformationResult,
+};
+
+// Re-export composition for convenience
+pub use composition::{
+    DefaultGraphComposer, GraphComposer, CompositionOptions,
+    CompositionError, CompositionResult, ConflictResolution,
+};
+
+// Re-export integration for convenience
+pub use integration::{
+    GraphAbstractionLayer, GraphAbstractionPlugin,
+    integrated_create_graph_system, integrated_node_system, integrated_edge_system,
 };
 
 /// Unified node data structure
@@ -64,6 +91,9 @@ pub enum GraphOperationError {
     
     #[error("Operation not supported: {0}")]
     NotSupported(String),
+    
+    #[error("Invalid operation: {0}")]
+    InvalidOperation(String),
 }
 
 /// Result type for graph operations

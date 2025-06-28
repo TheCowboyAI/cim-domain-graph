@@ -13,6 +13,14 @@ categories = ["data-structures", "asynchronous"]
 name = "generate-domain-graph"
 path = "src/bin/generate_domain_graph.rs"
 
+[[example]]
+name = "graph_abstraction_demo"
+path = "examples/graph_abstraction_demo.rs"
+
+[[example]]
+name = "graph_transformation_demo"
+path = "examples/graph_transformation_demo.rs"
+
 [dependencies]
 # Core dependencies
 cim-domain = { path = "../cim-domain" }

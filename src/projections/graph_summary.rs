@@ -3,14 +3,14 @@
 //! Provides a summary view of graphs including node/edge counts and metadata.
 
 use crate::{
-    domain_events::{GraphDomainEvent},
-    events::{GraphCreated, NodeAdded, NodeRemoved, EdgeAdded, EdgeRemoved},
+    domain_events::GraphDomainEvent,
+    events::{EdgeAdded, EdgeRemoved, GraphCreated, NodeAdded, NodeRemoved},
     GraphId,
 };
-use cim_domain::projections::{EventSequence, Projection};
-use cim_domain::DomainEventEnum;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use cim_domain::projections::{EventSequence, Projection};
+use cim_domain::DomainEventEnum;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -23,6 +23,8 @@ pub struct GraphSummary {
     pub name: String,
     /// Description of the graph's purpose
     pub description: String,
+    /// Type of the graph (context, concept, workflow, ipld)
+    pub graph_type: Option<String>,
     /// Current number of nodes in the graph
     pub node_count: usize,
     /// Current number of edges in the graph
@@ -62,6 +64,11 @@ impl GraphSummaryProjection {
         self.summaries.get(graph_id)
     }
 
+    /// Get a graph summary by ID (alias for compatibility)
+    pub fn get_graph_summary(&self, graph_id: &GraphId) -> Option<&GraphSummary> {
+        self.summaries.get(graph_id)
+    }
+
     /// Get all graph summaries
     pub fn get_all_summaries(&self) -> Vec<&GraphSummary> {
         self.summaries.values().collect()
@@ -69,11 +76,7 @@ impl GraphSummaryProjection {
 
     /// Get summaries with pagination
     pub fn get_summaries_paginated(&self, offset: usize, limit: usize) -> Vec<&GraphSummary> {
-        self.summaries
-            .values()
-            .skip(offset)
-            .take(limit)
-            .collect()
+        self.summaries.values().skip(offset).take(limit).collect()
     }
 
     /// Get total number of graphs
@@ -114,14 +117,28 @@ impl super::GraphProjection for GraphSummaryProjection {
                 graph_id,
                 name,
                 description,
+                graph_type,
                 metadata,
                 created_at,
                 ..
             }) => {
+                let graph_type_str = graph_type.map(|t| {
+                    match t {
+                        crate::components::GraphType::Generic => "generic",
+                        crate::components::GraphType::Workflow => "workflow",
+                        crate::components::GraphType::Knowledge => "knowledge",
+                        crate::components::GraphType::Development => "development",
+                        crate::components::GraphType::EventFlow => "eventflow",
+                        crate::components::GraphType::General => "general",
+                    }
+                    .to_string()
+                });
+
                 let summary = GraphSummary {
                     graph_id,
                     name,
                     description,
+                    graph_type: graph_type_str,
                     node_count: 0,
                     edge_count: 0,
                     created_at,
@@ -158,21 +175,17 @@ impl super::GraphProjection for GraphSummaryProjection {
                     summary.last_modified = Utc::now();
                 }
             }
-
-
         }
 
         Ok(())
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::NodeId;
     use crate::projections::GraphProjection;
+    use crate::NodeId;
 
     #[tokio::test]
     async fn test_graph_summary_projection() {

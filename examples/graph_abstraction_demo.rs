@@ -7,7 +7,7 @@
 use cim_domain_graph::{
     GraphId, NodeId,
     abstraction::Position3D,
-    handlers::abstract_handler::{AbstractGraphCommandHandler, InMemoryAbstractGraphRepository},
+    handlers::{AbstractGraphCommandHandler, InMemoryAbstractGraphRepository},
     commands::GraphCommand,
 };
 use std::collections::HashMap;
@@ -470,7 +470,7 @@ async fn add_edge(handler: &AbstractGraphCommandHandler, graph_id: GraphId, sour
 }
 
 async fn show_graph_stats(repository: &Arc<InMemoryAbstractGraphRepository>, graph_id: GraphId) -> Result<(), Box<dyn std::error::Error>> {
-    use cim_domain_graph::handlers::abstract_handler::AbstractGraphRepository;
+    use cim_domain_graph::handlers::AbstractGraphRepository;
     
     let graph = repository.load(graph_id).await?;
     let nodes = graph.list_nodes();

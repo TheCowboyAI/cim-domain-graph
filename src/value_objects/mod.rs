@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::ops::{AddAssign, Mul, SubAssign};
 
 /// Represents different types of nodes in a graph
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -193,6 +194,25 @@ impl Position3D {
     pub fn to_2d(&self) -> Position2D {
         Position2D::new(self.x, self.y)
     }
+
+    /// Calculate the magnitude (length) of the vector
+    pub fn magnitude(&self) -> f32 {
+        ((self.x * self.x + self.y * self.y + self.z * self.z) as f32).sqrt()
+    }
+
+    /// Normalize the vector (make it unit length)
+    pub fn normalize(&self) -> Self {
+        let mag = self.magnitude();
+        if mag > 0.0 {
+            Self {
+                x: self.x / mag as f64,
+                y: self.y / mag as f64,
+                z: self.z / mag as f64,
+            }
+        } else {
+            self.clone()
+        }
+    }
 }
 
 impl Default for Position3D {
@@ -207,14 +227,42 @@ impl From<Position2D> for Position3D {
     }
 }
 
+impl Mul<f32> for Position3D {
+    type Output = Self;
+
+    fn mul(self, scalar: f32) -> Self::Output {
+        Self {
+            x: self.x * scalar as f64,
+            y: self.y * scalar as f64,
+            z: self.z * scalar as f64,
+        }
+    }
+}
+
+impl SubAssign for Position3D {
+    fn sub_assign(&mut self, other: Self) {
+        self.x -= other.x;
+        self.y -= other.y;
+        self.z -= other.z;
+    }
+}
+
+impl AddAssign for Position3D {
+    fn add_assign(&mut self, other: Self) {
+        self.x += other.x;
+        self.y += other.y;
+        self.z += other.z;
+    }
+}
+
 /// Represents the size of a node
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Size {
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct NodeSize {
     pub width: f64,
     pub height: f64,
 }
 
-impl Size {
+impl NodeSize {
     /// Create a new size
     pub fn new(width: f64, height: f64) -> Result<Self, String> {
         if width <= 0.0 || height <= 0.0 {
@@ -229,7 +277,7 @@ impl Size {
     }
 }
 
-impl Default for Size {
+impl Default for NodeSize {
     fn default() -> Self {
         Self {
             width: 100.0,
@@ -259,11 +307,36 @@ impl Color {
     }
 
     /// Common color constants
-    pub const WHITE: Color = Color { r: 255, g: 255, b: 255, a: 255 };
-    pub const BLACK: Color = Color { r: 0, g: 0, b: 0, a: 255 };
-    pub const RED: Color = Color { r: 255, g: 0, b: 0, a: 255 };
-    pub const GREEN: Color = Color { r: 0, g: 255, b: 0, a: 255 };
-    pub const BLUE: Color = Color { r: 0, g: 0, b: 255, a: 255 };
+    pub const WHITE: Color = Color {
+        r: 255,
+        g: 255,
+        b: 255,
+        a: 255,
+    };
+    pub const BLACK: Color = Color {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 255,
+    };
+    pub const RED: Color = Color {
+        r: 255,
+        g: 0,
+        b: 0,
+        a: 255,
+    };
+    pub const GREEN: Color = Color {
+        r: 0,
+        g: 255,
+        b: 0,
+        a: 255,
+    };
+    pub const BLUE: Color = Color {
+        r: 0,
+        g: 0,
+        b: 255,
+        a: 255,
+    };
 }
 
 impl Default for Color {
@@ -283,7 +356,12 @@ pub struct Style {
 
 impl Style {
     /// Create a new style
-    pub fn new(fill_color: Color, border_color: Color, border_width: f64, opacity: f64) -> Result<Self, String> {
+    pub fn new(
+        fill_color: Color,
+        border_color: Color,
+        border_width: f64,
+        opacity: f64,
+    ) -> Result<Self, String> {
         if !(0.0..=1.0).contains(&opacity) {
             return Err("Opacity must be between 0.0 and 1.0".to_string());
         }
@@ -331,7 +409,10 @@ mod tests {
     fn test_node_type_from_string() {
         assert_eq!(NodeType::from_str("task"), NodeType::Task);
         assert_eq!(NodeType::from_str("DECISION"), NodeType::Decision);
-        assert_eq!(NodeType::from_str("custom_type"), NodeType::Custom("custom_type".to_string()));
+        assert_eq!(
+            NodeType::from_str("custom_type"),
+            NodeType::Custom("custom_type".to_string())
+        );
     }
 
     #[test]
@@ -353,7 +434,7 @@ mod tests {
     fn test_position_distance() {
         let pos1 = Position2D::new(0.0, 0.0);
         let pos2 = Position2D::new(3.0, 4.0);
-        
+
         assert_eq!(pos1.distance_to(&pos2), 5.0);
     }
 
@@ -361,16 +442,16 @@ mod tests {
     fn test_position_3d_to_2d() {
         let pos3d = Position3D::new(1.0, 2.0, 3.0);
         let pos2d = pos3d.to_2d();
-        
+
         assert_eq!(pos2d.x, 1.0);
         assert_eq!(pos2d.y, 2.0);
     }
 
     #[test]
     fn test_size_validation() {
-        assert!(Size::new(10.0, 20.0).is_ok());
-        assert!(Size::new(-1.0, 20.0).is_err());
-        assert!(Size::new(10.0, 0.0).is_err());
+        assert!(NodeSize::new(10.0, 20.0).is_ok());
+        assert!(NodeSize::new(-1.0, 20.0).is_err());
+        assert!(NodeSize::new(10.0, 0.0).is_err());
     }
 
     #[test]

@@ -12,24 +12,26 @@ pub struct GraphEntity {
     pub graph_type: GraphType,
 }
 
-/// Types of graphs in the system
+/// Graph types
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum GraphType {
-    /// Business workflow visualization
-    Workflow,
-    /// Conceptual knowledge graph
-    Conceptual,
-    /// Event flow visualization
-    EventFlow,
-    /// Development progress (dog-fooding)
-    Development,
     /// General purpose graph
+    Generic,
+    /// Workflow graph
+    Workflow,
+    /// Knowledge graph
+    Knowledge,
+    /// Development graph
+    Development,
+    /// Event flow graph
+    EventFlow,
+    /// General graph (alias for Generic)
     General,
 }
 
 impl Default for GraphType {
     fn default() -> Self {
-        Self::General
+        Self::Generic
     }
 }
 
@@ -77,63 +79,51 @@ impl Default for GraphMetadata {
     }
 }
 
-/// Graph layout configuration
-#[derive(Component, Debug, Clone, Serialize, Deserialize)]
-pub struct GraphLayout {
-    pub layout_type: LayoutType,
-    pub parameters: LayoutParameters,
-}
-
-/// Types of graph layouts
+/// Layout direction
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum LayoutType {
+pub enum LayoutDirection {
+    TopToBottom,
+    BottomToTop,
+    LeftToRight,
+    RightToLeft,
+}
+
+/// Graph layout algorithms
+#[derive(Component, Debug, Clone, PartialEq)]
+pub enum GraphLayout {
     /// Force-directed layout
-    ForceDirected,
+    ForceDirected {
+        spring_strength: f32,
+        repulsion_strength: f32,
+        damping: f32,
+    },
     /// Hierarchical layout
-    Hierarchical,
+    Hierarchical {
+        direction: LayoutDirection,
+        layer_spacing: f32,
+        node_spacing: f32,
+    },
     /// Circular layout
-    Circular,
+    Circular {
+        radius: f32,
+    },
     /// Grid layout
-    Grid,
-    /// Custom layout
-    Custom,
-}
-
-impl Default for LayoutType {
-    fn default() -> Self {
-        Self::ForceDirected
-    }
-}
-
-/// Layout parameters
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LayoutParameters {
-    pub node_spacing: f32,
-    pub edge_length: f32,
-    pub repulsion_force: f32,
-    pub attraction_force: f32,
-    pub damping: f32,
-    pub iterations: u32,
-}
-
-impl Default for LayoutParameters {
-    fn default() -> Self {
-        Self {
-            node_spacing: 100.0,
-            edge_length: 150.0,
-            repulsion_force: 1000.0,
-            attraction_force: 0.1,
-            damping: 0.9,
-            iterations: 100,
-        }
-    }
+    Grid {
+        columns: usize,
+        spacing: f32,
+    },
+    /// Random layout
+    Random {
+        bounds: (f32, f32, f32),
+    },
 }
 
 impl Default for GraphLayout {
     fn default() -> Self {
-        Self {
-            layout_type: LayoutType::default(),
-            parameters: LayoutParameters::default(),
+        Self::ForceDirected {
+            spring_strength: 0.1,
+            repulsion_strength: 100.0,
+            damping: 0.9,
         }
     }
 } 

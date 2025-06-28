@@ -3,43 +3,33 @@
 //! This module contains all ECS components used in the graph domain.
 //! Components represent the data/state of entities in the system.
 
+pub mod edge;
 pub mod graph;
 pub mod node;
-pub mod edge;
+pub mod spatial;
 pub mod visual;
 pub mod workflow;
-pub mod spatial;
 
 // Re-export commonly used types
-pub use graph::{
-    GraphEntity, GraphType, GraphStatus, GraphMetadata,
-    GraphLayout, LayoutType,
-};
+pub use graph::{GraphEntity, GraphLayout, GraphMetadata, GraphStatus, GraphType, LayoutDirection};
 
-pub use node::{
-    NodeEntity, NodeType, NodeContent, NodeMetadata,
-    NodeStatus, NodeCategory,
-};
+pub use node::{NodeCategory, NodeContent, NodeEntity, NodeMetadata, NodeStatus, NodeType};
 
 pub use edge::{
-    EdgeEntity, EdgeType, EdgeRelationship, EdgeMetadata,
-    EdgeWeight, EdgeDirection,
+    EdgeColor, EdgeDirection, EdgeEntity, EdgeMetadata, EdgeRelationship, EdgeStyle, EdgeType,
+    EdgeWeight,
 };
 
-pub use visual::{
-    Position3D, Color, Size, Style, Visibility,
-    Transform3D, BoundingBox,
-};
+pub use visual::{BoundingBox, Color, Position3D, Size, Style, Transform3D, Visibility};
 
 pub use workflow::{
-    WorkflowState, WorkflowStep, WorkflowTransition,
-    WorkflowStatus, WorkflowMetadata,
+    RetryPolicy, StepType, WorkflowMetadata, WorkflowState, WorkflowStatus, WorkflowStep,
+    WorkflowTransition,
 };
 
 pub use spatial::{
-    SpatialIndex, GridPosition, QuadrantLocation,
-    ProximityGroup, SpatialHash,
+    GridPosition, IndexType, ProximityGroup, QuadrantLocation, SpatialHash, SpatialIndex,
 };
 
 // Type aliases for common types
-pub use crate::{GraphId, NodeId, EdgeId}; 
+pub use crate::{EdgeId, GraphId, NodeId};
