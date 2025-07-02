@@ -1088,17 +1088,63 @@ impl GraphQueryHandler for GraphQueryHandlerImpl {
     }
 
     async fn find_source_nodes(&self, graph_id: GraphId) -> GraphQueryResult<Vec<NodeInfo>> {
-        // TODO: Find nodes with no incoming edges - requires edge projection
-        // For now, return all nodes as a placeholder
-        let nodes = self.get_nodes_in_graph(graph_id).await?;
-        Ok(nodes)
+        // Get all nodes in the graph
+        let all_nodes = self.node_list_projection.get_nodes_by_graph(&graph_id);
+        
+        // Get all edges in the graph to find nodes with incoming edges
+        let edges = self.edge_list_projection.get_edges_by_graph(&graph_id);
+        
+        // Create a set of nodes that have incoming edges
+        let mut nodes_with_incoming: HashSet<NodeId> = HashSet::new();
+        for edge in edges {
+            nodes_with_incoming.insert(edge.target_id);
+        }
+        
+        // Filter nodes that have no incoming edges (source nodes)
+        let source_nodes: Vec<NodeInfo> = all_nodes
+            .into_iter()
+            .filter(|node| !nodes_with_incoming.contains(&node.node_id))
+            .map(|node_info| NodeInfo {
+                node_id: node_info.node_id,
+                graph_id: node_info.graph_id,
+                node_type: node_info.node_type.clone(),
+                position_2d: None,
+                position_3d: None,
+                metadata: node_info.metadata.clone(),
+            })
+            .collect();
+        
+        Ok(source_nodes)
     }
 
     async fn find_sink_nodes(&self, graph_id: GraphId) -> GraphQueryResult<Vec<NodeInfo>> {
-        // TODO: Find nodes with no outgoing edges - requires edge projection
-        // For now, return all nodes as a placeholder
-        let nodes = self.get_nodes_in_graph(graph_id).await?;
-        Ok(nodes)
+        // Get all nodes in the graph
+        let all_nodes = self.node_list_projection.get_nodes_by_graph(&graph_id);
+        
+        // Get all edges in the graph to find nodes with outgoing edges
+        let edges = self.edge_list_projection.get_edges_by_graph(&graph_id);
+        
+        // Create a set of nodes that have outgoing edges
+        let mut nodes_with_outgoing: HashSet<NodeId> = HashSet::new();
+        for edge in edges {
+            nodes_with_outgoing.insert(edge.source_id);
+        }
+        
+        // Filter nodes that have no outgoing edges (sink nodes)
+        let sink_nodes: Vec<NodeInfo> = all_nodes
+            .into_iter()
+            .filter(|node| !nodes_with_outgoing.contains(&node.node_id))
+            .map(|node_info| NodeInfo {
+                node_id: node_info.node_id,
+                graph_id: node_info.graph_id,
+                node_type: node_info.node_type.clone(),
+                position_2d: None,
+                position_3d: None,
+                metadata: node_info.metadata.clone(),
+            })
+            .collect();
+        
+        Ok(sink_nodes)
     }
 }
 
@@ -1703,6 +1749,101 @@ mod tests {
             .unwrap();
 
         assert_eq!(nearby.len(), 2); // Should find nodes at (0,0) and (3,4)
+    }
+
+    #[tokio::test]
+    async fn test_source_sink_nodes() {
+        // Create test projections
+        let mut graph_summary = crate::projections::GraphSummaryProjection::new();
+        let mut node_list = crate::projections::NodeListProjection::new();
+        let mut edge_list = crate::projections::EdgeListProjection::new();
+
+        let graph_id = GraphId::new();
+        let source_node = NodeId::new();
+        let middle_node = NodeId::new();
+        let sink_node = NodeId::new();
+        let isolated_node = NodeId::new();
+
+        // Create graph
+        graph_summary
+            .handle_graph_event(GraphDomainEvent::GraphCreated(GraphCreated {
+                graph_id,
+                name: "Test Graph".to_string(),
+                description: "Test".to_string(),
+                graph_type: None,
+                metadata: HashMap::new(),
+                created_at: Utc::now(),
+            }))
+            .await
+            .unwrap();
+
+        // Add nodes: source -> middle -> sink, and isolated
+        for (node_id, node_type) in [
+            (source_node, "source"),
+            (middle_node, "middle"),
+            (sink_node, "sink"),
+            (isolated_node, "isolated"),
+        ] {
+            node_list
+                .handle_graph_event(GraphDomainEvent::NodeAdded(NodeAdded {
+                    graph_id,
+                    node_id,
+                    position: Position3D::default(),
+                    node_type: node_type.to_string(),
+                    metadata: HashMap::new(),
+                }))
+                .await
+                .unwrap();
+        }
+
+        // Create edges: source -> middle -> sink
+        edge_list
+            .handle_graph_event(GraphDomainEvent::EdgeAdded(EdgeAdded {
+                graph_id,
+                edge_id: EdgeId::new(),
+                source: source_node,
+                target: middle_node,
+                relationship: EdgeRelationship::Dependency {
+                    dependency_type: "test".to_string(),
+                    strength: 1.0,
+                },
+                edge_type: "dependency".to_string(),
+                metadata: HashMap::new(),
+            }))
+            .await
+            .unwrap();
+
+        edge_list
+            .handle_graph_event(GraphDomainEvent::EdgeAdded(EdgeAdded {
+                graph_id,
+                edge_id: EdgeId::new(),
+                source: middle_node,
+                target: sink_node,
+                relationship: EdgeRelationship::Dependency {
+                    dependency_type: "test".to_string(),
+                    strength: 1.0,
+                },
+                edge_type: "dependency".to_string(),
+                metadata: HashMap::new(),
+            }))
+            .await
+            .unwrap();
+
+        let handler = GraphQueryHandlerImpl::with_projections(graph_summary, node_list, edge_list);
+
+        // Test find_source_nodes - should find source_node and isolated_node
+        let source_nodes = handler.find_source_nodes(graph_id).await.unwrap();
+        assert_eq!(source_nodes.len(), 2);
+        let source_ids: HashSet<NodeId> = source_nodes.iter().map(|n| n.node_id).collect();
+        assert!(source_ids.contains(&source_node));
+        assert!(source_ids.contains(&isolated_node));
+
+        // Test find_sink_nodes - should find sink_node and isolated_node
+        let sink_nodes = handler.find_sink_nodes(graph_id).await.unwrap();
+        assert_eq!(sink_nodes.len(), 2);
+        let sink_ids: HashSet<NodeId> = sink_nodes.iter().map(|n| n.node_id).collect();
+        assert!(sink_ids.contains(&sink_node));
+        assert!(sink_ids.contains(&isolated_node));
     }
 }
 
