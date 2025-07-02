@@ -1,6 +1,7 @@
 //! Spatial indexing systems for efficient graph queries
 
 use bevy_ecs::prelude::*;
+use bevy_ecs::hierarchy::ChildOf;
 use crate::components::{NodeEntity, GraphEntity};
 use crate::value_objects::Position3D;
 use crate::{NodeId, GraphId};
@@ -47,15 +48,15 @@ pub struct UpdateSpatialIndexRequest {
 pub fn update_spatial_index_system(
     mut spatial_indices: ResMut<SpatialIndices>,
     mut update_requests: EventReader<UpdateSpatialIndexRequest>,
-    node_query: Query<(&NodeEntity, &Position3D, &Parent)>,
+    node_query: Query<(&NodeEntity, &Position3D, &ChildOf)>,
     graph_query: Query<&GraphEntity>,
 ) {
     for request in update_requests.read() {
         let mut nodes = Vec::new();
         
         // Collect all nodes for this graph
-        for (node, position, parent) in &node_query {
-            if let Ok(graph) = graph_query.get(parent.get()) {
+        for (node, position, child_of) in &node_query {
+            if let Ok(graph) = graph_query.get(child_of.parent()) {
                 if graph.graph_id == request.graph_id {
                     nodes.push(SpatialNode {
                         node_id: node.node_id,
@@ -115,7 +116,7 @@ pub fn find_nodes_in_region_system(
             }
         }
         
-        region_responses.send(FindNodesInRegionResponse {
+        region_responses.write(FindNodesInRegionResponse {
             graph_id: request.graph_id,
             nodes,
         });
@@ -163,7 +164,7 @@ pub fn find_nearest_nodes_system(
             }
         }
         
-        nearest_responses.send(FindNearestNodesResponse {
+        nearest_responses.write(FindNearestNodesResponse {
             graph_id: request.graph_id,
             nodes,
         });
@@ -254,7 +255,7 @@ pub fn cluster_nearby_nodes_system(
             }
         }
         
-        cluster_responses.send(ClusterNodesResponse {
+        cluster_responses.write(ClusterNodesResponse {
             graph_id: request.graph_id,
             clusters,
         });
@@ -264,19 +265,19 @@ pub fn cluster_nearby_nodes_system(
 /// System to automatically update spatial index when nodes change position
 pub fn auto_update_spatial_index(
     mut commands: Commands,
-    changed_nodes: Query<(&Parent, &Position3D), Changed<Position3D>>,
+    changed_nodes: Query<(&ChildOf, &Position3D), Changed<Position3D>>,
     graph_query: Query<&GraphEntity>,
 ) {
     let mut graphs_to_update = std::collections::HashSet::new();
     
-    for (parent, _) in &changed_nodes {
-        if let Ok(graph) = graph_query.get(parent.get()) {
+    for (child_of, _) in &changed_nodes {
+        if let Ok(graph) = graph_query.get(child_of.parent()) {
             graphs_to_update.insert(graph.graph_id);
         }
     }
     
     for graph_id in graphs_to_update {
-        commands.add(|world: &mut World| {
+        commands.queue(move |world: &mut World| {
             world.send_event(UpdateSpatialIndexRequest { graph_id });
         });
     }

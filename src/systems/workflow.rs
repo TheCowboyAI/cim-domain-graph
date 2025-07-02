@@ -1,9 +1,10 @@
 //! Workflow execution systems for graph-based workflows
 
 use bevy_ecs::prelude::*;
+use bevy_ecs::hierarchy::ChildOf;
 use crate::components::{NodeEntity, EdgeEntity, GraphEntity, NodeType};
-use crate::{NodeId, EdgeId, GraphId};
-use std::collections::{HashMap, HashSet, VecDeque};
+use crate::{NodeId, GraphId};
+use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
@@ -70,7 +71,7 @@ pub fn start_workflow_system(
     mut commands: Commands,
     mut start_requests: EventReader<StartWorkflowRequest>,
     mut workflow_manager: ResMut<WorkflowManager>,
-    node_query: Query<(&NodeEntity, &Parent)>,
+    node_query: Query<(&NodeEntity, &NodeType, &ChildOf)>,
     graph_query: Query<&GraphEntity>,
 ) {
     for request in start_requests.read() {
@@ -81,14 +82,14 @@ pub fn start_workflow_system(
             // Find a start node in the graph
             node_query
                 .iter()
-                .find(|(node, parent)| {
-                    if let Ok(graph) = graph_query.get(parent.get()) {
-                        graph.graph_id == request.graph_id && node.node_type == NodeType::Start
+                .find(|(_node, node_type, child_of)| {
+                    if let Ok(graph) = graph_query.get(child_of.parent()) {
+                        graph.graph_id == request.graph_id && **node_type == NodeType::Start
                     } else {
                         false
                     }
                 })
-                .map(|(node, _)| node.node_id)
+                .map(|(node, _, _)| node.node_id)
         };
         
         if let Some(start_node) = start_node {
@@ -111,10 +112,11 @@ pub fn start_workflow_system(
             workflow_manager.active_workflows.insert(execution_id, workflow_entity);
             
             // Trigger started event
-            commands.add(|world: &mut World| {
+            let graph_id = request.graph_id;
+            commands.queue(move |world: &mut World| {
                 world.send_event(WorkflowStartedEvent {
                     execution_id,
-                    graph_id: request.graph_id,
+                    graph_id,
                     start_node,
                 });
             });
@@ -143,7 +145,7 @@ pub fn advance_workflow_system(
     mut advance_requests: EventReader<AdvanceWorkflowRequest>,
     mut workflow_query: Query<&mut WorkflowExecution>,
     workflow_manager: Res<WorkflowManager>,
-    edge_query: Query<(&EdgeEntity, &Parent)>,
+    edge_query: Query<(&EdgeEntity, &ChildOf)>,
     graph_query: Query<&GraphEntity>,
 ) {
     for request in advance_requests.read() {
@@ -161,8 +163,8 @@ pub fn advance_workflow_system(
                         // Find outgoing edges from current node
                         let mut candidates = Vec::new();
                         
-                        for (edge, parent) in &edge_query {
-                            if let Ok(graph) = graph_query.get(parent.get()) {
+                        for (edge, child_of) in &edge_query {
+                            if let Ok(graph) = graph_query.get(child_of.parent()) {
                                 if graph.graph_id == workflow.graph_id && edge.source == current_node {
                                     candidates.push(edge.target);
                                 }
@@ -185,7 +187,7 @@ pub fn advance_workflow_system(
                             from_node: current_node,
                             to_node: next_node,
                         };
-                        commands.add(move |world: &mut World| {
+                        commands.queue(move |world: &mut World| {
                             world.send_event(event);
                         });
                     }
@@ -242,7 +244,7 @@ pub fn complete_workflow_system(
                         execution_id: workflow.execution_id,
                         result,
                     };
-                    commands.add(move |world: &mut World| {
+                    commands.queue(move |world: &mut World| {
                         world.send_event(event);
                     });
                     
@@ -288,7 +290,7 @@ pub fn timeout_workflows_system(
                         execution_id: workflow.execution_id,
                         duration: workflow.started_at.elapsed(),
                     };
-                    commands.add(move |world: &mut World| {
+                    commands.queue(move |world: &mut World| {
                         world.send_event(event);
                     });
                     
