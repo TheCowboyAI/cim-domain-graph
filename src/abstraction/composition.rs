@@ -285,7 +285,7 @@ impl GraphComposer for DefaultGraphComposer {
             "workflow" => GraphType::new_workflow(target_id, "Composed Graph"),
             "ipld" => GraphType::new_ipld(target_id),
             _ => return Err(CompositionError::GraphOperationFailed(
-                GraphOperationError::InvalidOperation(format!("Unknown graph type: {}", target_type))
+                GraphOperationError::InvalidOperation(format!("Unknown graph type: {target_type}"))
             )),
         };
         

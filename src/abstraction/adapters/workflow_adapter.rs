@@ -56,7 +56,7 @@ impl GraphImplementation for WorkflowGraphAdapter {
     fn add_node(&mut self, node_id: NodeId, data: NodeData) -> GraphResult<()> {
         // Store original metadata and position
         self.node_metadata.insert(node_id, data.metadata.clone());
-        self.node_positions.insert(node_id, data.position.clone());
+        self.node_positions.insert(node_id, data.position);
         
         // Convert node type to StepType
         let step_type = match data.node_type.as_str() {
@@ -119,9 +119,9 @@ impl GraphImplementation for WorkflowGraphAdapter {
         self.edge_types.insert(edge_id, data.edge_type.clone());
         
         let source_step = self.node_to_step.get(&source)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(source))?;
+            .ok_or(GraphOperationError::NodeNotFound(source))?;
         let target_step = self.node_to_step.get(&target)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(target))?;
+            .ok_or(GraphOperationError::NodeNotFound(target))?;
         
         // WorkflowGraph doesn't support adding dependencies after step creation
         // We'll just store the edge mapping for retrieval
@@ -132,10 +132,10 @@ impl GraphImplementation for WorkflowGraphAdapter {
     
     fn get_node(&self, node_id: NodeId) -> GraphResult<NodeData> {
         let step_id = self.node_to_step.get(&node_id)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(node_id))?;
+            .ok_or(GraphOperationError::NodeNotFound(node_id))?;
         
         let step = self.graph.workflow.steps.get(step_id)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(node_id))?;
+            .ok_or(GraphOperationError::NodeNotFound(node_id))?;
         
         // Start with original metadata if available
         let mut metadata = self.node_metadata.get(&node_id)
@@ -178,7 +178,7 @@ impl GraphImplementation for WorkflowGraphAdapter {
     
     fn get_edge(&self, edge_id: EdgeId) -> GraphResult<(EdgeData, NodeId, NodeId)> {
         let (source_step, target_step) = self.edge_map.get(&edge_id)
-            .ok_or_else(|| GraphOperationError::EdgeNotFound(edge_id))?;
+            .ok_or(GraphOperationError::EdgeNotFound(edge_id))?;
         
         let source_node = self.step_to_node.get(source_step)
             .ok_or_else(|| GraphOperationError::NodeNotFound(NodeId::new()))?;

@@ -64,9 +64,9 @@ impl GraphImplementation for ContextGraphAdapter {
     
     fn add_edge(&mut self, edge_id: EdgeId, source: NodeId, target: NodeId, data: EdgeData) -> GraphResult<()> {
         let from_ctx = self.node_id_map.get(&source)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(source))?;
+            .ok_or(GraphOperationError::NodeNotFound(source))?;
         let to_ctx = self.node_id_map.get(&target)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(target))?;
+            .ok_or(GraphOperationError::NodeNotFound(target))?;
         
         // Convert EdgeData to Value
         let value = serde_json::json!({
@@ -86,10 +86,10 @@ impl GraphImplementation for ContextGraphAdapter {
     
     fn get_node(&self, node_id: NodeId) -> GraphResult<NodeData> {
         let ctx_id = self.node_id_map.get(&node_id)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(node_id))?;
+            .ok_or(GraphOperationError::NodeNotFound(node_id))?;
         
         let node = self.graph.get_node(*ctx_id)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(node_id))?;
+            .ok_or(GraphOperationError::NodeNotFound(node_id))?;
         
         // Convert Value back to NodeData
         let node_type = node.value.get("type")
@@ -121,10 +121,10 @@ impl GraphImplementation for ContextGraphAdapter {
     
     fn get_edge(&self, edge_id: EdgeId) -> GraphResult<(EdgeData, NodeId, NodeId)> {
         let ctx_id = self.edge_id_map.get(&edge_id)
-            .ok_or_else(|| GraphOperationError::EdgeNotFound(edge_id))?;
+            .ok_or(GraphOperationError::EdgeNotFound(edge_id))?;
         
         let edge = self.graph.get_edge(*ctx_id)
-            .ok_or_else(|| GraphOperationError::EdgeNotFound(edge_id))?;
+            .ok_or(GraphOperationError::EdgeNotFound(edge_id))?;
         
         // Convert Value back to EdgeData
         let edge_type = edge.value.get("type")

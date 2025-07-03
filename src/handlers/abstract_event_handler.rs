@@ -133,7 +133,7 @@ impl AbstractGraphEventHandler {
         self.repository
             .load_graph(graph_id)
             .await?
-            .ok_or_else(|| format!("Graph not found: {}", graph_id))
+            .ok_or_else(|| format!("Graph not found: {graph_id}"))
     }
 }
 

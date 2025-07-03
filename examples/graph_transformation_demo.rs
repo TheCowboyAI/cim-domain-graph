@@ -174,7 +174,7 @@ fn demo_workflow_to_concept_transformation(
     if !data_loss.is_empty() {
         println!("   ⚠️  Warning: Potential data loss detected:");
         for warning in &data_loss {
-            println!("      - {}", warning);
+            println!("      - {warning}");
         }
         
         // Transform anyway with data loss allowed
@@ -250,8 +250,7 @@ fn demo_custom_mapping_transformation(
     // Show the mapped node types
     println!("\n   Node type mappings applied:");
     for (node_id, node_data) in context_graph.list_nodes() {
-        println!("      - Node {}: {} (transformed from workflow node)", 
-                 node_id, node_data.node_type);
+        println!("      - Node {node_id}: {node_data.node_type} (transformed from workflow node)");
     }
     
     Ok(())
@@ -289,9 +288,9 @@ fn demo_data_loss_preview(
     for (from, to) in transformations {
         let warnings = transformer.preview_data_loss(&concept_graph, to);
         if warnings.is_empty() {
-            println!("   ✅ {} → {}: No data loss", from, to);
+            println!("   ✅ {from} → {to}: No data loss");
         } else {
-            println!("   ⚠️  {} → {}: {}", from, to, warnings.join(", "));
+            println!("   ⚠️  {from} → {to}: {warnings.join(", "}"));
         }
     }
     
@@ -303,24 +302,20 @@ fn print_graph_summary(graph: &GraphType) {
     let nodes = graph.list_nodes();
     let edges = graph.list_edges();
     
-    println!("      Name: {}", metadata.name);
-    println!("      Nodes: {} total", nodes.len());
+    println!("      Name: {metadata.name}");
+    println!("      Nodes: {nodes.len(} total"));
     for (_, node_data) in nodes.iter().take(3) {
-        println!("        - Type: {}, Metadata keys: {:?}", 
-                 node_data.node_type,
-                 node_data.metadata.keys().collect::<Vec<_>>());
+        println!("        - Type: {node_data.node_type}, Metadata keys: {:?}", node_data.metadata.keys().collect::<Vec<_>>());
     }
     if nodes.len() > 3 {
-        println!("        ... and {} more", nodes.len() - 3);
+        println!("        ... and {nodes.len(} more") - 3);
     }
     
-    println!("      Edges: {} total", edges.len());
+    println!("      Edges: {edges.len(} total"));
     for (_, edge_data, _, _) in edges.iter().take(2) {
-        println!("        - Type: {}, Metadata keys: {:?}",
-                 edge_data.edge_type,
-                 edge_data.metadata.keys().collect::<Vec<_>>());
+        println!("        - Type: {edge_data.edge_type}, Metadata keys: {:?}", edge_data.metadata.keys().collect::<Vec<_>>());
     }
     if edges.len() > 2 {
-        println!("        ... and {} more", edges.len() - 2);
+        println!("        ... and {edges.len(} more") - 2);
     }
 } 

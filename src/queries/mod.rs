@@ -1192,7 +1192,7 @@ mod tests {
         let graph_id = GraphId::new();
         let error = GraphQueryError::GraphNotFound(graph_id);
 
-        let display = format!("{}", error);
+        let display = format!("{error}");
         assert!(display.contains("Graph not found"));
         assert!(display.contains(&graph_id.to_string()));
     }
@@ -1438,8 +1438,8 @@ mod tests {
             let graph_id = GraphId::new();
             let event = GraphDomainEvent::GraphCreated(GraphCreated {
                 graph_id,
-                name: format!("Graph {}", i),
-                description: format!("Test graph number {}", i),
+                name: format!("Graph {i}"),
+                description: format!("Test graph number {i}"),
                 graph_type: None,
                 metadata: std::collections::HashMap::new(),
                 created_at: Utc::now(),
@@ -1732,7 +1732,7 @@ mod tests {
                     graph_id,
                     node_id: NodeId::new(),
                     position: Position3D::default(),
-                    node_type: format!("Node{}", i),
+                    node_type: format!("Node{i}"),
                     metadata,
                 }))
                 .await

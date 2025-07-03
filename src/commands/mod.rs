@@ -245,7 +245,7 @@ mod tests {
         let graph_id = GraphId::new();
         let error = GraphCommandError::GraphNotFound(graph_id);
         
-        let display = format!("{}", error);
+        let display = format!("{error}");
         assert!(display.contains("Graph not found"));
         assert!(display.contains(&graph_id.to_string()));
     }

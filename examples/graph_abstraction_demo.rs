@@ -24,22 +24,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Demo 1: Create a Context Graph
     println!("1. Creating a Context Graph...");
     let context_graph = create_context_graph(&handler).await?;
-    println!("   Created context graph with ID: {}", context_graph);
+    println!("   Created context graph with ID: {context_graph}");
     
     // Demo 2: Create a Workflow Graph
     println!("\n2. Creating a Workflow Graph...");
     let workflow_graph = create_workflow_graph(&handler).await?;
-    println!("   Created workflow graph with ID: {}", workflow_graph);
+    println!("   Created workflow graph with ID: {workflow_graph}");
     
     // Demo 3: Create a Concept Graph
     println!("\n3. Creating a Concept Graph...");
     let concept_graph = create_concept_graph(&handler).await?;
-    println!("   Created concept graph with ID: {}", concept_graph);
+    println!("   Created concept graph with ID: {concept_graph}");
     
     // Demo 4: Create an IPLD Graph
     println!("\n4. Creating an IPLD Graph...");
     let ipld_graph = create_ipld_graph(&handler).await?;
-    println!("   Created IPLD graph with ID: {}", ipld_graph);
+    println!("   Created IPLD graph with ID: {ipld_graph}");
     
     // Demo 5: Show graph statistics
     println!("\n5. Graph Statistics:");
@@ -476,7 +476,7 @@ async fn show_graph_stats(repository: &Arc<InMemoryAbstractGraphRepository>, gra
     let nodes = graph.list_nodes();
     let edges = graph.list_edges();
     
-    println!("   Graph '{}': {} nodes, {} edges", graph.name(), nodes.len(), edges.len());
+    println!("   Graph '{graph.name(}': {} nodes, {} edges"), nodes.len(), edges.len());
     
     Ok(())
 } 

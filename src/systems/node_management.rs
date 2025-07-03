@@ -29,7 +29,7 @@ pub fn add_node_system(
                 node_id: event.node_id,
                 graph_id: event.graph_id,
             },
-            event.position.clone(),
+            event.position,
             NodeStatus::Active,
             NodeMetadata {
                 tags: event.metadata.get("tags")
@@ -91,7 +91,7 @@ pub fn update_node_system(
             if entity.node_id == event.node_id {
                 // Update position if provided
                 if let Some(new_pos) = &event.position {
-                    *position = new_pos.clone();
+                    *position = *new_pos;
                 }
                 
                 // Update metadata

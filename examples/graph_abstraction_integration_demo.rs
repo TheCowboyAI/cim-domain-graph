@@ -41,7 +41,7 @@ fn main() {
     println!("Running Bevy app with graph abstraction demonstration...\n");
     
     for i in 0..3 {
-        println!("--- Update {} ---", i);
+        println!("--- Update {i} ---");
         app.update();
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
@@ -396,15 +396,12 @@ fn demonstrate_transformation(
     match transformer.transform(&graphs.workflow, "concept", options) {
         Ok(concept_graph) => {
             println!("Successfully transformed workflow to concept graph!");
-            println!("  - Nodes: {}", concept_graph.list_nodes().len());
-            println!("  - Edges: {}", concept_graph.list_edges().len());
+            println!("  - Nodes: {concept_graph.list_nodes(}").len());
+            println!("  - Edges: {concept_graph.list_edges(}").len());
             
             // Show some node data
             for (node_id, node_data) in concept_graph.list_nodes().iter().take(3) {
-                println!("  - Node {}: type={}, metadata={:?}", 
-                    node_id, 
-                    node_data.node_type,
-                    node_data.metadata.get("name")
+                println!("  - Node {node_id}: type={node_data.node_type}, metadata={:?}", node_data.metadata.get("name")
                 );
             }
         }
@@ -433,17 +430,14 @@ fn demonstrate_composition(
     match composer.compose(&[&graphs.workflow, &graphs.knowledge], "context", options) {
         Ok(composed) => {
             println!("Successfully composed graphs!");
-            println!("  - Total nodes: {}", composed.list_nodes().len());
-            println!("  - Total edges: {}", composed.list_edges().len());
+            println!("  - Total nodes: {composed.list_nodes(}").len());
+            println!("  - Total edges: {composed.list_edges(}").len());
             println!("  - Graph type: Context (unified view)");
             
             // Show composition details
             println!("\nComposed graph contents:");
             for (node_id, node_data) in composed.list_nodes().iter().take(5) {
-                println!("  - Node {}: type={}, name={:?}", 
-                    node_id, 
-                    node_data.node_type,
-                    node_data.metadata.get("name")
+                println!("  - Node {node_id}: type={node_data.node_type}, name={:?}", node_data.metadata.get("name")
                 );
             }
         }

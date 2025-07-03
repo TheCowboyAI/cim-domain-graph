@@ -147,8 +147,7 @@ fn basic_composition_example(composer: &DefaultGraphComposer) {
         },
     }).unwrap();
     
-    println!("Composed workflow has {} nodes and {} edges", 
-        composed.list_nodes().len(),
+    println!("Composed workflow has {composed.list_nodes(} nodes and {} edges").len(),
         composed.list_edges().len()
     );
     
@@ -156,7 +155,7 @@ fn basic_composition_example(composer: &DefaultGraphComposer) {
     println!("\nComplete Order-to-Ship Workflow:");
     for (_, node_data) in composed.list_nodes() {
         if let Some(label) = node_data.metadata.get("label") {
-            println!("  - {} ({})", label, node_data.node_type);
+            println!("  - {label} ({node_data.node_type})");
         }
     }
     
@@ -220,8 +219,7 @@ fn conflict_resolution_example(composer: &DefaultGraphComposer) {
     options.node_conflict_resolution = ConflictResolution::KeepFirst;
     let composed = composer.compose(&[&concepts1, &concepts2], "concept", options).unwrap();
     let customer = composed.get_node(customer_id).unwrap();
-    println!("\n  KeepFirst: Customer version = {}", 
-        customer.metadata.get("version").unwrap()
+    println!("\n  KeepFirst: Customer version = {customer.metadata.get("version"}").unwrap()
     );
     
     // Strategy 2: Keep Last
@@ -229,8 +227,7 @@ fn conflict_resolution_example(composer: &DefaultGraphComposer) {
     options.node_conflict_resolution = ConflictResolution::KeepLast;
     let composed = composer.compose(&[&concepts1, &concepts2], "concept", options).unwrap();
     let customer = composed.get_node(customer_id).unwrap();
-    println!("  KeepLast: Customer version = {}", 
-        customer.metadata.get("version").unwrap()
+    println!("  KeepLast: Customer version = {customer.metadata.get("version"}").unwrap()
     );
     
     // Strategy 3: Merge
@@ -239,8 +236,7 @@ fn conflict_resolution_example(composer: &DefaultGraphComposer) {
     options.merge_metadata = true;
     let composed = composer.compose(&[&concepts1, &concepts2], "concept", options).unwrap();
     let customer = composed.get_node(customer_id).unwrap();
-    println!("  Merge: Customer attributes = {}", 
-        customer.metadata.get("attributes").unwrap()
+    println!("  Merge: Customer attributes = {customer.metadata.get("attributes"}").unwrap()
     );
     println!("         Position = ({:.1}, {:.1})", 
         customer.position.x, customer.position.y
@@ -329,14 +325,11 @@ fn cross_type_composition_example(composer: &DefaultGraphComposer) {
     let unified = composer.compose(&[&context, &workflow, &concepts], "context", options).unwrap();
     
     println!("Unified graph contains:");
-    println!("  - {} bounded contexts", 
-        unified.find_nodes_by_type("bounded_context").len()
+    println!("  - {unified.find_nodes_by_type("bounded_context"} bounded contexts").len()
     );
-    println!("  - {} workflow tasks", 
-        unified.find_nodes_by_type("task").len()
+    println!("  - {unified.find_nodes_by_type("task"} workflow tasks").len()
     );
-    println!("  - {} domain concepts", 
-        unified.find_nodes_by_type("concept").len()
+    println!("  - {unified.find_nodes_by_type("concept"} domain concepts").len()
     );
     
     println!();
@@ -417,12 +410,11 @@ fn custom_mapping_example(composer: &DefaultGraphComposer) {
     println!("After composition with custom mappings:");
     for (_node_id, node_data) in composed.list_nodes() {
         if let Some(name) = node_data.metadata.get("name") {
-            println!("  - Node {} -> {}", 
-                node_data.metadata.get("team").unwrap_or(&json!("?")).as_str().unwrap(),
+            println!("  - Node {node_data.metadata.get("team"} -> {}").unwrap_or(&json!("?")).as_str().unwrap(),
                 name
             );
         }
     }
     
-    println!("\nTotal nodes: {} (no conflicts!)", composed.list_nodes().len());
+    println!("\nTotal nodes: {composed.list_nodes(} (no conflicts!)").len());
 } 

@@ -530,7 +530,7 @@ mod tests {
 
             let command = GraphCommand::CreateGraph {
                 name: name.to_string(),
-                description: format!("A test {} graph", graph_type),
+                description: format!("A test {graph_type} graph"),
                 metadata,
             };
 

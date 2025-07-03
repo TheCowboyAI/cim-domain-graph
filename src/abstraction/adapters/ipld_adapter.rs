@@ -78,7 +78,7 @@ impl GraphImplementation for IpldGraphAdapter {
     fn add_node(&mut self, node_id: NodeId, data: NodeData) -> GraphResult<()> {
         // Store original metadata, position, and type
         self.node_metadata.insert(node_id, data.metadata.clone());
-        self.node_positions.insert(node_id, data.position.clone());
+        self.node_positions.insert(node_id, data.position);
         self.node_types.insert(node_id, data.node_type.clone());
         
         // Create an IPLD node based on the node type
@@ -152,9 +152,9 @@ impl GraphImplementation for IpldGraphAdapter {
         self.edge_metadata.insert(edge_id, data.metadata.clone());
         
         let source_cid = self.node_to_cid.get(&source)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(source))?;
+            .ok_or(GraphOperationError::NodeNotFound(source))?;
         let target_cid = self.node_to_cid.get(&target)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(target))?;
+            .ok_or(GraphOperationError::NodeNotFound(target))?;
         
         // Add edge based on type
         match data.edge_type.as_str() {
@@ -181,10 +181,10 @@ impl GraphImplementation for IpldGraphAdapter {
     
     fn get_node(&self, node_id: NodeId) -> GraphResult<NodeData> {
         let cid = self.node_to_cid.get(&node_id)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(node_id))?;
+            .ok_or(GraphOperationError::NodeNotFound(node_id))?;
         
         let cid_node = self.dag.get_node(cid)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(node_id))?;
+            .ok_or(GraphOperationError::NodeNotFound(node_id))?;
         
         // Start with original metadata if available
         let mut metadata = self.node_metadata.get(&node_id)
@@ -248,7 +248,7 @@ impl GraphImplementation for IpldGraphAdapter {
     
     fn get_edge(&self, edge_id: EdgeId) -> GraphResult<(EdgeData, NodeId, NodeId)> {
         let (source_cid, target_cid, edge_type) = self.edge_map.get(&edge_id)
-            .ok_or_else(|| GraphOperationError::EdgeNotFound(edge_id))?;
+            .ok_or(GraphOperationError::EdgeNotFound(edge_id))?;
         
         let source_node = self.cid_to_node.get(source_cid)
             .ok_or_else(|| GraphOperationError::NodeNotFound(NodeId::new()))?;

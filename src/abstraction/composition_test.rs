@@ -326,7 +326,7 @@ mod tests {
         for i in 0..3 {
             let node = NodeId::new();
             graph1.add_node(node, NodeData {
-                node_type: format!("step{}", i),
+                node_type: format!("step{i}"),
                 position: Position3D { x: i as f64 * 10.0, y: 0.0, z: 0.0 },
                 metadata: HashMap::new(),
             }).unwrap();
@@ -335,7 +335,7 @@ mod tests {
         for i in 3..6 {
             let node = NodeId::new();
             graph2.add_node(node, NodeData {
-                node_type: format!("step{}", i),
+                node_type: format!("step{i}"),
                 position: Position3D { x: i as f64 * 10.0, y: 0.0, z: 0.0 },
                 metadata: HashMap::new(),
             }).unwrap();
@@ -344,7 +344,7 @@ mod tests {
         for i in 6..9 {
             let node = NodeId::new();
             graph3.add_node(node, NodeData {
-                node_type: format!("step{}", i),
+                node_type: format!("step{i}"),
                 position: Position3D { x: i as f64 * 10.0, y: 0.0, z: 0.0 },
                 metadata: HashMap::new(),
             }).unwrap();
@@ -361,7 +361,7 @@ mod tests {
         // Check that all node types are present
         let node_types: Vec<_> = nodes.iter().map(|(_, data)| &data.node_type).collect();
         for i in 0..9 {
-            assert!(node_types.contains(&&format!("step{}", i)));
+            assert!(node_types.contains(&&format!("step{i}")));
         }
     }
     

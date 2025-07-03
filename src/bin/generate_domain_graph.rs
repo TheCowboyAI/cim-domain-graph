@@ -21,27 +21,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mermaid = graph.to_mermaid();
     let mermaid_path = output_dir.join("domain-model.mmd");
     fs::write(&mermaid_path, mermaid)?;
-    println!("Generated Mermaid diagram: {}", mermaid_path.display());
+    println!("Generated Mermaid diagram: {mermaid_path.display(}"));
 
     // Generate GraphViz DOT
     let dot = graph.to_dot();
     let dot_path = output_dir.join("domain-model.dot");
     fs::write(&dot_path, dot)?;
-    println!("Generated DOT diagram: {}", dot_path.display());
+    println!("Generated DOT diagram: {dot_path.display(}"));
 
     // Find unused elements
     let unused = graph.find_unused_elements();
     if !unused.is_empty() {
-        println!("\nWarning: Found {} unused elements:", unused.len());
+        println!("\nWarning: Found {unused.len(} unused elements:"));
         for node in unused {
-            println!("  - {} ({})", node.name, node.module);
+            println!("  - {node.name} ({node.module})");
         }
     }
 
     // Find missing elements
     let missing = graph.find_missing_elements();
     if !missing.is_empty() {
-        println!("\nWarning: Found {} missing elements referenced in relationships:", missing.len());
+        println!("\nWarning: Found {missing.len(} missing elements referenced in relationships:"));
         for name in missing {
             println!("  - {name}");
         }
@@ -51,13 +51,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let report = generate_analysis_report(&graph);
     let report_path = output_dir.join("domain-analysis.md");
     fs::write(&report_path, report)?;
-    println!("\nGenerated analysis report: {}", report_path.display());
+    println!("\nGenerated analysis report: {report_path.display(}"));
 
     println!("\nDomain model analysis complete!");
-    println!("\nTo view the Mermaid diagram, paste the contents of {} into:", mermaid_path.display());
+    println!("\nTo view the Mermaid diagram, paste the contents of {mermaid_path.display(} into:"));
     println!("  https://mermaid.live/");
     println!("\nTo generate a PNG from the DOT file, run:");
-    println!("  dot -Tpng {} -o domain-model.png", dot_path.display());
+    println!("  dot -Tpng {dot_path.display(} -o domain-model.png"));
 
     Ok(())
 }
@@ -82,7 +82,7 @@ fn generate_analysis_report(graph: &DomainGraph) -> String {
     }
 
     report.push_str("\n### Relationship Summary\n\n");
-    report.push_str(&format!("Total relationships: {}\n\n", graph.edges.len()));
+    report.push_str(&format!("Total relationships: {graph.edges.len(}\n\n")));
 
     // Group relationships by type
     let mut rel_counts = std::collections::HashMap::new();
@@ -108,14 +108,14 @@ fn generate_analysis_report(graph: &DomainGraph) -> String {
         report.push_str(&format!("### Module: {module}\n\n"));
 
         for node in nodes {
-            report.push_str(&format!("#### {} ({:?})\n\n", node.name, node.element_type));
+            report.push_str(&format!("#### {node.name} ({:?})\n\n", node.element_type));
 
             if !node.fields.is_empty() {
                 report.push_str("**Fields:**\n");
                 for field in &node.fields {
                     let opt = if field.is_optional { "?" } else { "" };
                     let coll = if field.is_collection { "[]" } else { "" };
-                    report.push_str(&format!("- {}: {}{}{}\n", field.name, field.field_type, coll, opt));
+                    report.push_str(&format!("- {field.name}: {field.field_type}{coll}{opt}\n"));
                 }
                 report.push('\n');
             }

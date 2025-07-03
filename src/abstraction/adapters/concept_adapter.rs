@@ -83,9 +83,9 @@ impl GraphImplementation for ConceptGraphAdapter {
         self.edge_metadata.insert(edge_id, data.metadata.clone());
         
         let source_ctx = self.node_id_map.get(&source)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(source))?;
+            .ok_or(GraphOperationError::NodeNotFound(source))?;
         let target_ctx = self.node_id_map.get(&target)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(target))?;
+            .ok_or(GraphOperationError::NodeNotFound(target))?;
         
         // Convert edge type to semantic relationship
         let relationship = match data.edge_type.as_str() {
@@ -112,11 +112,11 @@ impl GraphImplementation for ConceptGraphAdapter {
     
     fn get_node(&self, node_id: NodeId) -> GraphResult<NodeData> {
         let ctx_id = self.node_id_map.get(&node_id)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(node_id))?;
+            .ok_or(GraphOperationError::NodeNotFound(node_id))?;
         
         let graph = self.graph.lock().unwrap();
         let node = graph.get_node(*ctx_id)
-            .ok_or_else(|| GraphOperationError::NodeNotFound(node_id))?
+            .ok_or(GraphOperationError::NodeNotFound(node_id))?
             .clone();
         
         let position = Position3D {
@@ -155,11 +155,11 @@ impl GraphImplementation for ConceptGraphAdapter {
     
     fn get_edge(&self, edge_id: EdgeId) -> GraphResult<(EdgeData, NodeId, NodeId)> {
         let ctx_id = self.edge_id_map.get(&edge_id)
-            .ok_or_else(|| GraphOperationError::EdgeNotFound(edge_id))?;
+            .ok_or(GraphOperationError::EdgeNotFound(edge_id))?;
         
         let graph = self.graph.lock().unwrap();
         let edge_data = graph.get_edge(*ctx_id)
-            .ok_or_else(|| GraphOperationError::EdgeNotFound(edge_id))?;
+            .ok_or(GraphOperationError::EdgeNotFound(edge_id))?;
         let edge = edge_data.0.clone();
         let source_ctx = edge_data.1;
         let target_ctx = edge_data.2;
