@@ -46,7 +46,7 @@ impl GraphBridge {
                                     }
                                 }
                                 Err(e) => {
-                                    eprintln!("Error handling graph command: {:?}", e);
+                                    eprintln!("Error handling graph command: {e:?}");
                                 }
                             }
                         }

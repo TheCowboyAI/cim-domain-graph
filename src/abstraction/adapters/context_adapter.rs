@@ -156,7 +156,7 @@ impl GraphImplementation for ContextGraphAdapter {
     fn list_nodes(&self) -> Vec<(NodeId, NodeData)> {
         self.node_id_map.iter()
             .filter_map(|(domain_id, ctx_id)| {
-                self.graph.get_node(*ctx_id).and_then(|node| {
+                self.graph.get_node(*ctx_id).map(|node| {
                     // Convert Value to NodeData
                     let node_type = node.value.get("type")
                         .and_then(|v| v.as_str())
@@ -178,11 +178,11 @@ impl GraphImplementation for ContextGraphAdapter {
                         .map(|m| m.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
                         .unwrap_or_default();
                     
-                    Some((*domain_id, NodeData {
+                    (*domain_id, NodeData {
                         node_type,
                         position,
                         metadata,
-                    }))
+                    })
                 })
             })
             .collect()

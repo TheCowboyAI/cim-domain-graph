@@ -476,7 +476,7 @@ async fn show_graph_stats(repository: &Arc<InMemoryAbstractGraphRepository>, gra
     let nodes = graph.list_nodes();
     let edges = graph.list_edges();
     
-    println!("   Graph '{graph.name(}': {} nodes, {} edges"), nodes.len(), edges.len());
+            println!("   Graph '{}': {} nodes, {} edges", graph.name(), nodes.len(), edges.len());
     
     Ok(())
 } 

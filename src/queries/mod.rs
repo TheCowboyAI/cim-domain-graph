@@ -1077,11 +1077,10 @@ impl GraphQueryHandler for GraphQueryHandlerImpl {
 
         // Check for cycles starting from each unvisited node
         for node in all_nodes {
-            if !visited.contains(&node) {
-                if dfs_has_cycle(node, &adjacency, &mut visited, &mut rec_stack) {
+            if !visited.contains(&node)
+                && dfs_has_cycle(node, &adjacency, &mut visited, &mut rec_stack) {
                     return Ok(true);
                 }
-            }
         }
 
         Ok(false)

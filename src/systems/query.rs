@@ -59,7 +59,7 @@ pub fn find_nodes_system(
             // Filter by node type if specified
             if let Some(requested_type) = &request.node_type {
                 let type_matches = node_type
-                    .map(|t| format!("{:?}", t).to_lowercase() == requested_type.to_lowercase())
+                    .map(|t| format!("{t:?}").to_lowercase() == requested_type.to_lowercase())
                     .unwrap_or(false);
 
                 if !type_matches {
@@ -98,8 +98,8 @@ pub fn find_nodes_system(
             found_nodes.push(NodeInfo {
                 node_id: entity.node_id,
                 graph_id: entity.graph_id,
-                position: position.clone(),
-                node_type: node_type.map(|t| format!("{:?}", t)),
+                position: *position,
+                node_type: node_type.map(|t| format!("{t:?}")),
                 metadata: metadata.map(|m| m.properties.clone()).unwrap_or_default(),
             });
         }

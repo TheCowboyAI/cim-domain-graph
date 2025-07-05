@@ -120,7 +120,7 @@ impl GraphImplementation for ConceptGraphAdapter {
             .clone();
         
         let position = Position3D {
-            x: node.position.coordinates.get(0).copied().unwrap_or(0.0) as f64,
+            x: node.position.coordinates.first().copied().unwrap_or(0.0) as f64,
             y: node.position.coordinates.get(1).copied().unwrap_or(0.0) as f64,
             z: node.position.coordinates.get(2).copied().unwrap_or(0.0) as f64,
         };
@@ -136,9 +136,7 @@ impl GraphImplementation for ConceptGraphAdapter {
         
         // Merge any additional metadata from the concept node
         for (key, value) in node.metadata {
-            if !metadata.contains_key(&key) {
-                metadata.insert(key, value);
-            }
+            metadata.entry(key).or_insert(value);
         }
         
         // Get original node type or default to "concept"
@@ -179,9 +177,7 @@ impl GraphImplementation for ConceptGraphAdapter {
         
         // Merge any additional properties from the edge
         for (key, value) in edge.properties {
-            if !metadata.contains_key(&key) {
-                metadata.insert(key, value);
-            }
+            metadata.entry(key).or_insert(value);
         }
         
         Ok((
@@ -199,7 +195,7 @@ impl GraphImplementation for ConceptGraphAdapter {
             .filter_map(|(domain_id, ctx_id)| {
                 self.graph.lock().unwrap().get_node(*ctx_id).cloned().map(|node| {
                     let position = Position3D {
-                        x: node.position.coordinates.get(0).copied().unwrap_or(0.0) as f64,
+                        x: node.position.coordinates.first().copied().unwrap_or(0.0) as f64,
                         y: node.position.coordinates.get(1).copied().unwrap_or(0.0) as f64,
                         z: node.position.coordinates.get(2).copied().unwrap_or(0.0) as f64,
                     };

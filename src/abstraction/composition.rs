@@ -101,6 +101,12 @@ pub trait GraphComposer {
 /// Default implementation of graph composer
 pub struct DefaultGraphComposer;
 
+impl Default for DefaultGraphComposer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DefaultGraphComposer {
     /// Create a new default graph composer
     pub fn new() -> Self {
@@ -348,7 +354,7 @@ impl GraphComposer for DefaultGraphComposer {
         
         // Validate edges if requested
         if options.validate_edges {
-            for (_edge_id, (_, source, target_id)) in &edge_map {
+            for (_, source, target_id) in edge_map.values() {
                 if !node_map.contains_key(source) || !node_map.contains_key(target_id) {
                     return Err(CompositionError::InvalidEdge(*source, *target_id));
                 }

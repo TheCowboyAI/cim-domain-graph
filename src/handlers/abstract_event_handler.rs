@@ -84,7 +84,7 @@ impl AbstractGraphEventHandler {
 
                 graph
                     .add_node(e.node_id, node_data)
-                    .map_err(|err| format!("Failed to add node: {:?}", err))?;
+                    .map_err(|err| format!("Failed to add node: {err:?}"))?;
 
                 self.repository.save_graph(&graph).await?;
             }
@@ -94,7 +94,7 @@ impl AbstractGraphEventHandler {
 
                 graph
                     .remove_node(e.node_id)
-                    .map_err(|err| format!("Failed to remove node: {:?}", err))?;
+                    .map_err(|err| format!("Failed to remove node: {err:?}"))?;
 
                 self.repository.save_graph(&graph).await?;
             }
@@ -109,7 +109,7 @@ impl AbstractGraphEventHandler {
 
                 graph
                     .add_edge(e.edge_id, e.source, e.target, edge_data)
-                    .map_err(|err| format!("Failed to add edge: {:?}", err))?;
+                    .map_err(|err| format!("Failed to add edge: {err:?}"))?;
 
                 self.repository.save_graph(&graph).await?;
             }
@@ -119,7 +119,7 @@ impl AbstractGraphEventHandler {
 
                 graph
                     .remove_edge(e.edge_id)
-                    .map_err(|err| format!("Failed to remove edge: {:?}", err))?;
+                    .map_err(|err| format!("Failed to remove edge: {err:?}"))?;
 
                 self.repository.save_graph(&graph).await?;
             }
@@ -145,7 +145,7 @@ impl cim_domain::EventHandler<GraphDomainEvent> for AbstractGraphEventHandler {
     async fn handle(&self, event: GraphDomainEvent) -> Result<(), Self::Error> {
         self.handle_event(&event)
             .await
-            .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)) as Self::Error)
+            .map_err(|e| Box::new(std::io::Error::other(e)) as Self::Error)
     }
 }
 

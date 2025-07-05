@@ -72,6 +72,12 @@ pub trait GraphTransformer {
 /// Default implementation of graph transformer
 pub struct DefaultGraphTransformer;
 
+impl Default for DefaultGraphTransformer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DefaultGraphTransformer {
     /// Create a new default graph transformer
     pub fn new() -> Self {

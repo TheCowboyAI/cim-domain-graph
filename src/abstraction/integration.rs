@@ -114,7 +114,7 @@ pub fn integrated_create_graph_system(
         tokio::spawn(async move {
             let mut graphs_lock = graphs.write().await;
             
-            if !graphs_lock.contains_key(&graph_id) {
+            graphs_lock.entry(graph_id).or_insert_with(|| {
                 let abstract_graph = match graph_type {
                     GraphType::Workflow => AbstractGraphType::new_workflow(graph_id, &name),
                     GraphType::Knowledge => AbstractGraphType::new_concept(graph_id, &name),
@@ -123,8 +123,8 @@ pub fn integrated_create_graph_system(
                     _ => AbstractGraphType::new_context(graph_id, &name),
                 };
                 
-                graphs_lock.insert(graph_id, abstract_graph);
-            }
+                abstract_graph
+            });
         });
     }
 }

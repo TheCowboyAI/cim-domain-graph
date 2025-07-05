@@ -9,8 +9,10 @@ use std::ops::{AddAssign, Mul, SubAssign};
 
 /// Represents different types of nodes in a graph
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum NodeType {
     /// A task or action node
+    #[default]
     Task,
     /// A decision point
     Decision,
@@ -68,16 +70,13 @@ impl fmt::Display for NodeType {
     }
 }
 
-impl Default for NodeType {
-    fn default() -> Self {
-        NodeType::Task
-    }
-}
 
 /// Represents different types of edges in a graph
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum EdgeType {
     /// Sequential flow between nodes
+    #[default]
     Sequence,
     /// Conditional flow (with condition)
     Conditional(String),
@@ -135,11 +134,6 @@ impl fmt::Display for EdgeType {
     }
 }
 
-impl Default for EdgeType {
-    fn default() -> Self {
-        EdgeType::Sequence
-    }
-}
 
 /// Represents the position of a node in 2D space
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -210,7 +204,7 @@ impl Position3D {
                 z: self.z / mag as f64,
             }
         } else {
-            self.clone()
+            *self
         }
     }
 }

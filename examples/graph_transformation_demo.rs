@@ -290,7 +290,7 @@ fn demo_data_loss_preview(
         if warnings.is_empty() {
             println!("   ✅ {from} → {to}: No data loss");
         } else {
-            println!("   ⚠️  {from} → {to}: {warnings.join(", "}"));
+            println!("   ⚠️  {} → {}: {}", from, to, warnings.join(", "));
         }
     }
     

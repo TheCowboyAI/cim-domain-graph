@@ -21,7 +21,7 @@ pub fn force_directed_layout_system(
             let nodes: Vec<(NodeEntity, Position3D)> = node_query
                 .iter()
                 .filter(|(n, _)| n.graph_id == graph.graph_id)
-                .map(|(n, p)| (n.clone(), p.clone()))
+                .map(|(n, p)| (n.clone(), *p))
                 .collect();
 
             if nodes.is_empty() {
@@ -44,8 +44,8 @@ pub fn force_directed_layout_system(
                         let force_magnitude = repulsion_strength / (distance * distance);
                         let force = delta.normalize() * force_magnitude;
 
-                        *forces.entry(node1.node_id).or_insert(Position3D::default()) -= force;
-                        *forces.entry(node2.node_id).or_insert(Position3D::default()) += force;
+                        *forces.entry(node1.node_id).or_default() -= force;
+                        *forces.entry(node2.node_id).or_default() += force;
                     }
                 }
             }
@@ -77,8 +77,8 @@ pub fn force_directed_layout_system(
                         let force_magnitude = spring_strength * (distance - 100.0); // 100.0 is ideal distance
                         let force = delta.normalize() * force_magnitude;
 
-                        *forces.entry(edge.source).or_insert(Position3D::default()) += force;
-                        *forces.entry(edge.target).or_insert(Position3D::default()) -= force;
+                        *forces.entry(edge.source).or_default() += force;
+                        *forces.entry(edge.target).or_default() -= force;
                     }
                 }
             }

@@ -112,6 +112,7 @@ impl Default for Visibility {
 
 /// 3D transformation
 #[derive(Component, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct Transform3D {
     pub position: Position3D,
     pub rotation: Quaternion,
@@ -154,15 +155,6 @@ impl Default for Vec3 {
     }
 }
 
-impl Default for Transform3D {
-    fn default() -> Self {
-        Self {
-            position: Position3D::default(),
-            rotation: Quaternion::default(),
-            scale: Vec3::default(),
-        }
-    }
-}
 
 /// Bounding box for spatial queries
 #[derive(Component, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
