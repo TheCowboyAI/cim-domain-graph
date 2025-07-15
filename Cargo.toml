@@ -55,6 +55,9 @@ cid = "0.11"
 blake3 = "1.5"
 multihash = "0.19"
 
+# Utilities
+rand = "0.8"
+
 # Collections
 indexmap = "2.7"
 

@@ -7,6 +7,7 @@ pub mod layout;
 pub mod spatial;
 pub mod workflow;
 pub mod query;
+pub mod advanced_layout_system;
 
 // Re-export all systems
 pub use lifecycle::{
@@ -37,4 +38,9 @@ pub use layout::{
 
 pub use spatial::*;
 pub use workflow::*;
-pub use query::*; 
+pub use query::*;
+pub use advanced_layout_system::{
+    AdvancedLayoutType, AdvancedLayoutConfig, ApplyAdvancedLayout,
+    AdvancedLayoutPlugin, LayoutQualityMetrics,
+    apply_advanced_layout_system, calculate_layout_quality_system,
+}; 

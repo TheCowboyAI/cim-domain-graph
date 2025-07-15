@@ -13,6 +13,8 @@ pub mod domain_events;
 pub mod events;
 pub mod handlers;
 pub mod infrastructure;
+pub mod layout;
+pub mod performance;
 pub mod plugin;
 pub mod projections;
 pub mod queries;
