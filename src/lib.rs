@@ -9,6 +9,7 @@ pub mod aggregate;
 pub mod bridge;
 pub mod commands;
 pub mod components;
+pub mod deployment;
 pub mod domain_events;
 pub mod events;
 pub mod handlers;

@@ -5,10 +5,12 @@
 
 mod abstract_event_handler;
 mod abstract_handler;
+mod event_publishing_handler;
 mod unified_handler;
 
 pub use abstract_event_handler::{AbstractGraphEventHandler, AbstractGraphEventRepository};
 pub use abstract_handler::*;
+pub use event_publishing_handler::EventPublishingGraphHandler;
 pub use unified_handler::{UnifiedGraphCommandHandler, UnifiedGraphRepository};
 
 use crate::{
@@ -294,7 +296,7 @@ impl CommandHandler<GraphCommand> for GraphCommandHandlerImpl {
 
         match result {
             Ok(_events) => {
-                // TODO: Publish events with correlation/causation from envelope
+                // Events are published by EventPublishingGraphHandler wrapper
                 CommandAcknowledgment {
                     command_id,
                     correlation_id,

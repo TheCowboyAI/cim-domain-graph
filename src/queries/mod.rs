@@ -3,6 +3,11 @@
 //! Queries provide read-only access to graph data. They operate on projections
 //! and read models rather than directly on aggregates.
 
+mod query_result_publisher;
+mod result_publisher;
+pub use query_result_publisher::{QueryResultPublisher, ResultPublishingQueryHandler};
+pub use result_publisher::{QueryResultPublisher as SimpleQueryResultPublisher, create_query_result_publisher};
+
 use crate::value_objects::{Position2D, Position3D};
 use crate::{EdgeId, GraphId, NodeId};
 use async_trait::async_trait;
@@ -10,6 +15,7 @@ use cim_domain::{Query, QueryEnvelope, QueryHandler, QueryResponse};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::{VecDeque, HashSet};
+use std::sync::Arc;
 
 /// Query result type
 pub type GraphQueryResult<T> = Result<T, GraphQueryError>;
@@ -292,6 +298,7 @@ pub struct GraphQueryHandlerImpl {
     graph_summary_projection: crate::projections::GraphSummaryProjection,
     node_list_projection: crate::projections::NodeListProjection,
     edge_list_projection: crate::projections::EdgeListProjection,
+    result_publisher: Option<Arc<dyn SimpleQueryResultPublisher>>,
 }
 
 impl Default for GraphQueryHandlerImpl {
@@ -307,6 +314,17 @@ impl GraphQueryHandlerImpl {
             graph_summary_projection: crate::projections::GraphSummaryProjection::new(),
             node_list_projection: crate::projections::NodeListProjection::new(),
             edge_list_projection: crate::projections::EdgeListProjection::new(),
+            result_publisher: None,
+        }
+    }
+    
+    /// Create a new graph query handler with result publisher
+    pub fn with_publisher(publisher: Arc<dyn SimpleQueryResultPublisher>) -> Self {
+        Self {
+            graph_summary_projection: crate::projections::GraphSummaryProjection::new(),
+            node_list_projection: crate::projections::NodeListProjection::new(),
+            edge_list_projection: crate::projections::EdgeListProjection::new(),
+            result_publisher: Some(publisher),
         }
     }
 
@@ -320,6 +338,7 @@ impl GraphQueryHandlerImpl {
             graph_summary_projection,
             node_list_projection,
             edge_list_projection,
+            result_publisher: None,
         }
     }
 }
@@ -328,6 +347,71 @@ impl GraphQueryHandlerImpl {
 impl Query for GraphQuery {}
 impl Query for NodeQuery {}
 impl Query for EdgeQuery {}
+
+impl GraphQueryHandlerImpl {
+    /// Helper to publish query results if publisher is configured
+    async fn publish_result<T: serde::Serialize>(
+        &self, 
+        envelope: &QueryEnvelope<GraphQuery>,
+        query_type: &str,
+        result: &T,
+    ) {
+        if let Some(ref publisher) = self.result_publisher {
+            if let Ok(result_value) = serde_json::to_value(result) {
+                let _ = publisher.publish_result(
+                    &envelope.id.to_string(),
+                    query_type,
+                    &result_value,
+                    envelope.correlation_id().to_string(),
+                    Some(envelope.id.to_string()),
+                    envelope.issued_by.clone(),
+                ).await;
+            }
+        }
+    }
+    
+    /// Helper to publish node query results if publisher is configured
+    async fn publish_node_result<T: serde::Serialize>(
+        &self, 
+        envelope: &QueryEnvelope<NodeQuery>,
+        query_type: &str,
+        result: &T,
+    ) {
+        if let Some(ref publisher) = self.result_publisher {
+            if let Ok(result_value) = serde_json::to_value(result) {
+                let _ = publisher.publish_result(
+                    &envelope.id.to_string(),
+                    query_type,
+                    &result_value,
+                    envelope.correlation_id().to_string(),
+                    Some(envelope.id.to_string()),
+                    envelope.issued_by.clone(),
+                ).await;
+            }
+        }
+    }
+    
+    /// Helper to publish edge query results if publisher is configured
+    async fn publish_edge_result<T: serde::Serialize>(
+        &self, 
+        envelope: &QueryEnvelope<EdgeQuery>,
+        query_type: &str,
+        result: &T,
+    ) {
+        if let Some(ref publisher) = self.result_publisher {
+            if let Ok(result_value) = serde_json::to_value(result) {
+                let _ = publisher.publish_result(
+                    &envelope.id.to_string(),
+                    query_type,
+                    &result_value,
+                    envelope.correlation_id().to_string(),
+                    Some(envelope.id.to_string()),
+                    envelope.issued_by.clone(),
+                ).await;
+            }
+        }
+    }
+}
 
 // Implement QueryHandler for GraphQuery
 impl QueryHandler<GraphQuery> for GraphQueryHandlerImpl {
@@ -340,32 +424,32 @@ impl QueryHandler<GraphQuery> for GraphQueryHandlerImpl {
         let result = runtime.block_on(async {
             match &envelope.query {
                 GraphQuery::GetGraph { graph_id } => {
-                    self.get_graph(*graph_id).await.map(|info| {
-                        // TODO: Publish result to event stream with correlation
-                        serde_json::to_value(info).unwrap()
-                    })
+                    let result = self.get_graph(*graph_id).await;
+                    if let Ok(ref info) = result {
+                        self.publish_result(&envelope, "GetGraph", info).await;
+                    }
+                    result.map(|info| serde_json::to_value(info).unwrap())
                 }
                 GraphQuery::GetAllGraphs { pagination } => {
-                    self.get_all_graphs(pagination.clone()).await.map(|infos| {
-                        // TODO: Publish result to event stream with correlation
-                        serde_json::to_value(infos).unwrap()
-                    })
+                    let result = self.get_all_graphs(pagination.clone()).await;
+                    if let Ok(ref infos) = result {
+                        self.publish_result(&envelope, "GetAllGraphs", infos).await;
+                    }
+                    result.map(|infos| serde_json::to_value(infos).unwrap())
                 }
                 GraphQuery::SearchGraphs { query, pagination } => {
-                    self.search_graphs(query, pagination.clone())
-                        .await
-                        .map(|infos| {
-                            // TODO: Publish result to event stream with correlation
-                            serde_json::to_value(infos).unwrap()
-                        })
+                    let result = self.search_graphs(query, pagination.clone()).await;
+                    if let Ok(ref infos) = result {
+                        self.publish_result(&envelope, "SearchGraphs", infos).await;
+                    }
+                    result.map(|infos| serde_json::to_value(infos).unwrap())
                 }
                 GraphQuery::FilterGraphs { filter, pagination } => {
-                    self.filter_graphs(filter.clone(), pagination.clone())
-                        .await
-                        .map(|infos| {
-                            // TODO: Publish result to event stream with correlation
-                            serde_json::to_value(infos).unwrap()
-                        })
+                    let result = self.filter_graphs(filter.clone(), pagination.clone()).await;
+                    if let Ok(ref infos) = result {
+                        self.publish_result(&envelope, "FilterGraphs", infos).await;
+                    }
+                    result.map(|infos| serde_json::to_value(infos).unwrap())
                 }
             }
         });
@@ -398,39 +482,39 @@ impl QueryHandler<NodeQuery> for GraphQueryHandlerImpl {
         let result = runtime.block_on(async {
             match &envelope.query {
                 NodeQuery::GetNode { node_id } => {
-                    self.get_node(*node_id).await.map(|info| {
-                        // TODO: Publish result to event stream with correlation
-                        serde_json::to_value(info).unwrap()
-                    })
+                    let result = self.get_node(*node_id).await;
+                    if let Ok(ref info) = result {
+                        self.publish_node_result(&envelope, "GetNode", info).await;
+                    }
+                    result.map(|info| serde_json::to_value(info).unwrap())
                 }
                 NodeQuery::GetNodesInGraph { graph_id } => {
-                    self.get_nodes_in_graph(*graph_id).await.map(|infos| {
-                        // TODO: Publish result to event stream with correlation
-                        serde_json::to_value(infos).unwrap()
-                    })
+                    let result = self.get_nodes_in_graph(*graph_id).await;
+                    if let Ok(ref infos) = result {
+                        self.publish_node_result(&envelope, "GetNodesInGraph", infos).await;
+                    }
+                    result.map(|infos| serde_json::to_value(infos).unwrap())
                 }
                 NodeQuery::GetNodesByType {
                     graph_id,
                     node_type,
                 } => {
-                    self.get_nodes_by_type(*graph_id, node_type)
-                        .await
-                        .map(|infos| {
-                            // TODO: Publish result to event stream with correlation
-                            serde_json::to_value(infos).unwrap()
-                        })
+                    let result = self.get_nodes_by_type(*graph_id, node_type).await;
+                    if let Ok(ref infos) = result {
+                        self.publish_node_result(&envelope, "GetNodesByType", infos).await;
+                    }
+                    result.map(|infos| serde_json::to_value(infos).unwrap())
                 }
                 NodeQuery::FindNodesNearPosition {
                     graph_id,
                     center,
                     radius,
                 } => {
-                    self.find_nodes_near_position(*graph_id, *center, *radius)
-                        .await
-                        .map(|infos| {
-                            // TODO: Publish result to event stream with correlation
-                            serde_json::to_value(infos).unwrap()
-                        })
+                    let result = self.find_nodes_near_position(*graph_id, *center, *radius).await;
+                    if let Ok(ref infos) = result {
+                        self.publish_node_result(&envelope, "FindNodesNearPosition", infos).await;
+                    }
+                    result.map(|infos| serde_json::to_value(infos).unwrap())
                 }
             }
         });
@@ -463,39 +547,49 @@ impl QueryHandler<EdgeQuery> for GraphQueryHandlerImpl {
         let result = runtime.block_on(async {
             match &envelope.query {
                 EdgeQuery::GetEdge { edge_id } => {
-                    self.get_edge(*edge_id).await.map(|info| {
-                        serde_json::to_value(info).unwrap()
-                    })
+                    let result = self.get_edge(*edge_id).await;
+                    if let Ok(ref info) = result {
+                        self.publish_edge_result(&envelope, "GetEdge", info).await;
+                    }
+                    result.map(|info| serde_json::to_value(info).unwrap())
                 }
                 EdgeQuery::GetEdgesInGraph { graph_id } => {
-                    self.get_edges_in_graph(*graph_id).await.map(|infos| {
-                        serde_json::to_value(infos).unwrap()
-                    })
+                    let result = self.get_edges_in_graph(*graph_id).await;
+                    if let Ok(ref infos) = result {
+                        self.publish_edge_result(&envelope, "GetEdgesInGraph", infos).await;
+                    }
+                    result.map(|infos| serde_json::to_value(infos).unwrap())
                 }
                 EdgeQuery::GetEdgesByType {
                     graph_id,
                     edge_type,
                 } => {
-                    self.get_edges_by_type(*graph_id, edge_type)
-                        .await
-                        .map(|infos| {
-                            serde_json::to_value(infos).unwrap()
-                        })
+                    let result = self.get_edges_by_type(*graph_id, edge_type).await;
+                    if let Ok(ref infos) = result {
+                        self.publish_edge_result(&envelope, "GetEdgesByType", infos).await;
+                    }
+                    result.map(|infos| serde_json::to_value(infos).unwrap())
                 }
                 EdgeQuery::GetNodeEdges { node_id } => {
-                    self.get_node_edges(*node_id).await.map(|infos| {
-                        serde_json::to_value(infos).unwrap()
-                    })
+                    let result = self.get_node_edges(*node_id).await;
+                    if let Ok(ref infos) = result {
+                        self.publish_edge_result(&envelope, "GetNodeEdges", infos).await;
+                    }
+                    result.map(|infos| serde_json::to_value(infos).unwrap())
                 }
                 EdgeQuery::GetIncomingEdges { node_id } => {
-                    self.get_incoming_edges(*node_id).await.map(|infos| {
-                        serde_json::to_value(infos).unwrap()
-                    })
+                    let result = self.get_incoming_edges(*node_id).await;
+                    if let Ok(ref infos) = result {
+                        self.publish_edge_result(&envelope, "GetIncomingEdges", infos).await;
+                    }
+                    result.map(|infos| serde_json::to_value(infos).unwrap())
                 }
                 EdgeQuery::GetOutgoingEdges { node_id } => {
-                    self.get_outgoing_edges(*node_id).await.map(|infos| {
-                        serde_json::to_value(infos).unwrap()
-                    })
+                    let result = self.get_outgoing_edges(*node_id).await;
+                    if let Ok(ref infos) = result {
+                        self.publish_edge_result(&envelope, "GetOutgoingEdges", infos).await;
+                    }
+                    result.map(|infos| serde_json::to_value(infos).unwrap())
                 }
             }
         });
@@ -658,8 +752,8 @@ impl GraphQueryHandler for GraphQueryHandlerImpl {
                 node_id: node_info.node_id,
                 graph_id: node_info.graph_id,
                 node_type: node_info.node_type.clone(),
-                position_2d: None, // TODO: Add position tracking to projections
-                position_3d: None, // TODO: Add position tracking to projections
+                position_2d: node_info.position_2d,
+                position_3d: node_info.position_3d,
                 metadata: node_info.metadata.clone(),
             }),
             None => Err(GraphQueryError::NodeNotFound(node_id)),
@@ -675,8 +769,8 @@ impl GraphQueryHandler for GraphQueryHandlerImpl {
                 node_id: node_info.node_id,
                 graph_id: node_info.graph_id,
                 node_type: node_info.node_type.clone(),
-                position_2d: None, // TODO: Add position tracking to projections
-                position_3d: None, // TODO: Add position tracking to projections
+                position_2d: node_info.position_2d,
+                position_3d: node_info.position_3d,
                 metadata: node_info.metadata.clone(),
             })
             .collect();
@@ -698,8 +792,8 @@ impl GraphQueryHandler for GraphQueryHandlerImpl {
                 node_id: node_info.node_id,
                 graph_id: node_info.graph_id,
                 node_type: node_info.node_type.clone(),
-                position_2d: None, // TODO: Add position tracking to projections
-                position_3d: None, // TODO: Add position tracking to projections
+                position_2d: node_info.position_2d,
+                position_3d: node_info.position_3d,
                 metadata: node_info.metadata.clone(),
             })
             .collect();
@@ -719,28 +813,25 @@ impl GraphQueryHandler for GraphQueryHandlerImpl {
         // Filter nodes by distance from center
         let nearby_nodes: Vec<NodeInfo> = nodes
             .into_iter()
-            .filter_map(|node| {
-                // Try to get position from metadata
-                let pos_x = node.metadata.get("position_x")?.as_f64()?;
-                let pos_y = node.metadata.get("position_y")?.as_f64()?;
-                
-                // Calculate distance
-                let dx = pos_x - center.x;
-                let dy = pos_y - center.y;
-                let distance = (dx * dx + dy * dy).sqrt();
-                
-                if distance <= radius {
-                    Some(NodeInfo {
-                        node_id: node.node_id,
-                        graph_id: node.graph_id,
-                        node_type: node.node_type.clone(),
-                        position_2d: Some(Position2D { x: pos_x, y: pos_y }),
-                        position_3d: None,
-                        metadata: node.metadata.clone(),
-                    })
+            .filter(|node| {
+                // Check if node has 2D position
+                if let Some(ref pos) = node.position_2d {
+                    // Calculate distance
+                    let dx = pos.x - center.x;
+                    let dy = pos.y - center.y;
+                    let distance = (dx * dx + dy * dy).sqrt();
+                    distance <= radius
                 } else {
-                    None
+                    false
                 }
+            })
+            .map(|node| NodeInfo {
+                node_id: node.node_id,
+                graph_id: node.graph_id,
+                node_type: node.node_type.clone(),
+                position_2d: node.position_2d,
+                position_3d: node.position_3d,
+                metadata: node.metadata.clone(),
             })
             .collect();
 

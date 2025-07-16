@@ -1,6 +1,7 @@
 //! Graph projections
-
-// TODO: Move graph projections from cim-domain
+//!
+//! Projections are optimized read models for graph data that are updated by
+//! handling domain events. They provide efficient queries for graph information.
 
 pub mod edge_list;
 pub mod graph_summary;

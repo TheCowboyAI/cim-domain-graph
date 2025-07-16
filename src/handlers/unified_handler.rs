@@ -80,7 +80,7 @@ impl UnifiedGraphCommandHandler {
     }
 
     /// Process a graph command
-    async fn process_graph_command(
+    pub async fn process_graph_command(
         &self,
         command: GraphCommand,
         _envelope: &CommandEnvelope<GraphCommand>,

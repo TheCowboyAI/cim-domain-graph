@@ -71,6 +71,20 @@ pub enum GraphCommand {
     },
 }
 
+impl GraphCommand {
+    /// Get the graph ID this command operates on
+    pub fn graph_id(&self) -> Option<GraphId> {
+        match self {
+            GraphCommand::CreateGraph { .. } => None,
+            GraphCommand::AddNode { graph_id, .. } => Some(*graph_id),
+            GraphCommand::RemoveNode { graph_id, .. } => Some(*graph_id),
+            GraphCommand::ChangeNodeMetadata { graph_id, .. } => Some(*graph_id),
+            GraphCommand::AddEdge { graph_id, .. } => Some(*graph_id),
+            GraphCommand::RemoveEdge { graph_id, .. } => Some(*graph_id),
+        }
+    }
+}
+
 /// Commands for node operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum NodeCommand {
@@ -147,6 +161,13 @@ pub enum GraphCommandError {
     BusinessRuleViolation(String),
     /// Concurrent modification detected
     ConcurrentModification(String),
+    /// Internal error
+    InternalError(String),
+    /// Concurrency conflict with version tracking
+    ConcurrencyConflict {
+        expected: Option<u64>,
+        current: Option<u64>,
+    },
 }
 
 impl std::fmt::Display for GraphCommandError {
@@ -158,6 +179,10 @@ impl std::fmt::Display for GraphCommandError {
             GraphCommandError::InvalidCommand(msg) => write!(f, "Invalid command: {msg}"),
             GraphCommandError::BusinessRuleViolation(msg) => write!(f, "Business rule violation: {msg}"),
             GraphCommandError::ConcurrentModification(msg) => write!(f, "Concurrent modification: {msg}"),
+            GraphCommandError::InternalError(msg) => write!(f, "Internal error: {msg}"),
+            GraphCommandError::ConcurrencyConflict { expected, current } => {
+                write!(f, "Concurrency conflict: expected version {:?}, current version {:?}", expected, current)
+            }
         }
     }
 }

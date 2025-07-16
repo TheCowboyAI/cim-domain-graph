@@ -5,6 +5,7 @@
 use crate::{
     domain_events::GraphDomainEvent,
     events::{NodeAdded, NodeRemoved},
+    value_objects::{Position2D, Position3D},
     GraphId, NodeId,
 };
 use async_trait::async_trait;
@@ -24,6 +25,10 @@ pub struct NodeInfo {
     pub node_type: String,
     /// Optional human-readable name
     pub name: Option<String>,
+    /// 2D position of the node (for layouts)
+    pub position_2d: Option<Position2D>,
+    /// 3D position of the node (for 3D visualization)
+    pub position_3d: Option<Position3D>,
     /// Additional metadata about the node
     pub metadata: HashMap<String, serde_json::Value>,
 }
@@ -149,6 +154,7 @@ impl super::GraphProjection for NodeListProjection {
             GraphDomainEvent::NodeAdded(NodeAdded {
                 graph_id,
                 node_id,
+                position,
                 node_type,
                 metadata,
                 ..
@@ -159,11 +165,17 @@ impl super::GraphProjection for NodeListProjection {
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string());
 
+                // Convert 3D position to 2D by dropping Z coordinate
+                let position_2d = Some(Position2D::new(position.x, position.y));
+                let position_3d = Some(position);
+
                 let node_info = NodeInfo {
                     node_id,
                     graph_id,
                     node_type: node_type.clone(),
                     name,
+                    position_2d,
+                    position_3d,
                     metadata,
                 };
 
