@@ -23,7 +23,7 @@ path = "examples/graph_transformation_demo.rs"
 
 [dependencies]
 # Core dependencies
-cim-domain = { path = "../cim-domain" }
+cim-domain = { git = "https://github.com/TheCowboyAI/cim-domain.git", branch = "main" }
 cim-infrastructure = { path = "../cim-infrastructure" }
 cim-contextgraph = { path = "../cim-contextgraph" }
 cim-conceptgraph = { path = "../cim-conceptgraph" }
